@@ -1,5 +1,4 @@
 import { Header } from "@/components/agency/Header";
-import { Footer } from "@/components/agency/Footer";
 import { CALENDLY, EMAIL, copy } from "@/content/agency/copy";
 
 const button =
@@ -96,7 +95,6 @@ export default function AgencyPage() {
           <p className="text-arepo-ink2">{copy.final.warm}</p>
         </section>
       </main>
-      <Footer />
     </>
   );
 }

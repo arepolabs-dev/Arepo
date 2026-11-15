@@ -39,7 +39,7 @@ export const copy = {
   },
   saves: {
     title: "Time and money back",
-    body: "Admin eats evenings. Every job you stop doing by hand is an hour back and an invoice paid sooner, week after week. One fix often pays for itself within weeks.",
+    body: "Admin eats evenings. Every job you stop doing by hand is an hour back and an invoice paid sooner, week after week.",
   },
   how: {
     title: "How it works",
@@ -52,9 +52,9 @@ export const copy = {
   different: {
     title: "Why it is different",
     bullets: [
-      // CONFIRM: (a) price range, "usually £400 to £1,200" per fix. Dayyan to confirm the figures.
-      "Fixed price, agreed up front. Fixes are usually £400 to £1,200.",
-      "Runs on your own computer. No monthly subscription unless you want support (£50 to £150 a month, with 1 to 2 hours included).",
+      // Dayyan 15 Nov: no prices on the landing page; request a quote.
+      "Fixed price, agreed up front. Ask us for a free quote.",
+      "Runs on your own computer. No monthly subscription unless you want ongoing support.",
       "You keep the code and the data. We never hold your main passwords; you give us a key you can revoke.",
       "Plain workflows first. AI only where it earns its place, and always with your approval step.",
     ],
@@ -88,7 +88,7 @@ export const copy = {
   },
   footer: {
     line: "Arepo Labs, Shepherd's Bush, London.",
-    // CONFIRM: (b) legal line. Dayyan to confirm this wording.
+    // Dayyan 15 Nov: footer removed from the landing page for now (unused).
     legal: "Arepo Labs is a trading name of Dayyan Sheikh.",
     research: "Arepo prediction-market research",
   },
