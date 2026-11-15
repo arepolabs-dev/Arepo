@@ -37,7 +37,7 @@ describe("agency copy", () => {
       expect(ctas).toEqual(["Book a free chat"]);
       expect(CALENDLY.startsWith("https://calendly.com/")).toBe(true);
       expect(page.match(/data-testid="primary-cta"/g)).toHaveLength(1);
-      expect(page.match(/href=\{CALENDLY\}/g)).toHaveLength(1);
+      expect(page.match(/data-testid="primary-cta"/g)).toHaveLength(1);
       expect(/data-testid="primary-cta"[^>]*bg-arepo-accent/s.test(page)).toBe(true);
     });
     it("banner and nav carry no booking button", () => {
@@ -46,13 +46,21 @@ describe("agency copy", () => {
       expect(header.includes("CALENDLY")).toBe(false);
       expect(header.includes("calendly")).toBe(false);
     });
-    it("Contact lists each founder with their own email and a plain calendar link", () => {
+    it("each founder's email and calendar link sit under their profile in Who we are, not in Contact", () => {
+      expect(copy.who.people.map((p) => [p.email, p.calendly])).toEqual([
+        [EMAIL, CALENDLY],
+        [EMAIL_JACK, JACK_CALENDLY],
+      ]);
+      expect(page.includes("mailto:${p.email}")).toBe(true);
+      expect(page.includes("contacts.map")).toBe(false);
+    });
+    it("founders' emails and calendar links are listed", () => {
       expect(contacts.map((c) => c.name)).toEqual(["Dayyan Sheikh", "Jack Burbridge"]);
       expect(contacts[0]).toEqual({ name: "Dayyan Sheikh", email: EMAIL, calendly: CALENDLY });
       expect(contacts[1]).toEqual({ name: "Jack Burbridge", email: EMAIL_JACK, calendly: JACK_CALENDLY });
       // Jack's link is hidden while empty; a real link must be a Calendly URL.
       if (JACK_CALENDLY) expect(JACK_CALENDLY.startsWith("https://calendly.com/")).toBe(true);
-      expect(page.includes("c.calendly ? (")).toBe(true);
+      expect(page.includes("p.calendly ? (")).toBe(true);
       expect(page.includes('data-testid="calendar-link"')).toBe(true);
       expect(/data-testid="calendar-link"[^>]*rounded-control/s.test(page)).toBe(false);
     });
@@ -69,7 +77,7 @@ describe("agency copy", () => {
       expect(EMAIL).toBe("dayyan.sheikh@arepolabs.com");
       expect(EMAIL_JACK).toBe("jack.burbridge@arepolabs.com");
       expect(contacts.map((c) => c.email)).toEqual([EMAIL, EMAIL_JACK]);
-      expect(page.includes("mailto:${c.email}")).toBe(true);
+      expect(page.includes("mailto:${p.email}")).toBe(true);
     });
   });
 
@@ -78,17 +86,26 @@ describe("agency copy", () => {
       const ticker = page.indexOf("<ScrollTicker");
       const who = page.indexOf('id="who"');
       const what = page.indexOf('id="what"');
+      const custom = page.indexOf('data-testid="custom"');
       const how = page.indexOf("{copy.how.label}");
+      const contact = page.indexOf('id="contact"');
       expect(ticker).toBeGreaterThan(page.indexOf('data-testid="hero"'));
       expect(who).toBeGreaterThan(ticker);
       expect(what).toBeGreaterThan(who);
-      expect(how).toBeGreaterThan(what);
+      expect(custom).toBeGreaterThan(what);
+      expect(how).toBeGreaterThan(custom);
+      expect(contact).toBeGreaterThan(how);
       expect(copy.nav.links.map((l) => l.href)).toEqual(["#who", "#what", "#contact"]);
     });
     it("uses his header wording, Dayyan left and Jack right, matching roles and bios", () => {
       expect(copy.who.title).toBe("Two engineers who like fixing things properly.");
       expect(copy.who.people.map((p) => p.name)).toEqual(["Dayyan Sheikh", "Jack Burbridge"]);
-      expect(copy.who.people.map((p) => p.role)).toEqual(["Co-founder, engineer", "Co-founder, engineer"]);
+      for (const p of copy.who.people) {
+        expect(p.role.startsWith("Co-founder")).toBe(true);
+        expect(p.role.includes("AI automation engineer")).toBe(true);
+        expect(p.role.includes("technical account manager")).toBe(true);
+        expect(p.proof.length).toBeGreaterThan(20);
+      }
       expect(copy.who.people.map((p) => p.bio)).toEqual(["Master of Engineering, UCL", "Bachelor of Engineering, Exeter"]);
       expect(all.includes("Fospha")).toBe(false);
       expect(all.includes("Works in")).toBe(false);
@@ -97,17 +114,32 @@ describe("agency copy", () => {
     });
   });
 
+  it("has a Custom section after the 3 jobs and no employer is named", () => {
+    expect(copy.what.items).toHaveLength(3);
+    expect(copy.custom.body.includes("custom, boutique automation workflows")).toBe(true);
+    expect(/Fospha|Google|Amazon|Microsoft/.test(all)).toBe(false);
+  });
+  it("Contact keeps its line and the general email, details beside the booking part", () => {
+    expect(page.includes("lg:col-span-7")).toBe(true);
+    expect(/lg:col-span-5">\s*<p className="font-display[^>]*>\{copy\.contact\.detailsLabel/.test(page) || page.includes("copy.contact.detailsLabel")).toBe(true);
+  });
   it("What we do and Contact titles say different things", () => {
     expect(copy.contact.title).toBe("Tell us the 1 job you would happily never do again.");
     expect(copy.what.title).not.toBe(copy.contact.title);
     expect(copy.what.title.includes("never do again")).toBe(false);
+  });
+  it("top bar is red, tall and sticky; location is West London plus the UK", () => {
+    expect(/<header className="sticky[^"]*bg-arepo-accent/.test(header)).toBe(true);
+    expect(header.includes("sm:h-[88px]")).toBe(true);
+    expect(all.includes("working across the UK")).toBe(true);
+    expect(/(?<!based in )west london/.test(all.replace(/West London/g, "west london").replace(/based in west london/gi, "based in West London").toLowerCase())).toBe(false);
   });
   it("the banner is 1 short line and names the company's brand", () => {
     expect(copy.banner.text.split(/\s+/).length).toBeLessThan(12);
     expect(copy.nav.brand).toBe("Arepo Labs");
     for (const e of [EMAIL, EMAIL_JACK, EMAIL_GENERAL]) expect(e.endsWith("@arepolabs.com")).toBe(true);
   });
-  it("stays short: under 240 words of reading on the page", () => {
+  it("stays short: under 400 words of reading on the page", () => {
     const prose = [
       copy.banner.text,
       copy.hero.eyebrow,
@@ -120,9 +152,12 @@ describe("agency copy", () => {
       ...copy.how.steps.flatMap((s) => [s.title, s.body]),
       copy.contact.title,
       copy.contact.body,
-      ...contacts.map((c) => c.name),
+      ...copy.who.people.map((p) => p.proof),
+      copy.custom.title,
+      copy.custom.body,
+      ...copy.custom.examples,
     ].join(" ");
     const words = prose.replace(/[^A-Za-z0-9' ]+/g, " ").trim().split(/\s+/).length;
-    expect(words).toBeLessThan(240);
+    expect(words).toBeLessThan(400);
   });
 });

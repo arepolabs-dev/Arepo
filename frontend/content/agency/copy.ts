@@ -14,7 +14,7 @@ export const EMAIL_GENERAL = "enquiries@arepolabs.com";
 export const EMAIL = "dayyan.sheikh@arepolabs.com";
 export const EMAIL_JACK = "jack.burbridge@arepolabs.com";
 
-/** Each founder's own email and calendar link, listed under Contact as plain text links. */
+/** Each founder's own email and calendar link, shown under their profile in Who we are. */
 export const contacts = [
   { name: "Dayyan Sheikh", email: EMAIL, calendly: CALENDLY },
   { name: "Jack Burbridge", email: EMAIL_JACK, calendly: JACK_CALENDLY },
@@ -24,11 +24,11 @@ export const copy = {
   meta: {
     title: "Arepo Labs",
     description:
-      "Practical automation for local businesses. 2 engineers in west London who take the repetitive admin off your plate.",
+      "Practical automation for local businesses. 2 engineers based in West London, working across the UK, who take the repetitive admin off your plate.",
   },
   /** The slim strip above the nav. Plain text and an in-page link: not a 2nd booking button. */
   banner: {
-    text: "Now booking free automation chats in west London.",
+    text: "Now booking free automation chats across the UK.",
     linkLabel: "Get in touch",
     href: "#contact",
   },
@@ -41,7 +41,7 @@ export const copy = {
     ],
   },
   hero: {
-    eyebrow: "Arepo Labs, west London",
+    eyebrow: "Arepo Labs, based in West London, working across the UK",
     h1: "Practical automation for local businesses.",
     sub: "We are 2 engineers. We build small tools that take the repetitive admin off your plate, so your time goes on the work that pays.",
     cta: "Book a free chat",
@@ -53,20 +53,28 @@ export const copy = {
     label: "Who we are",
     // Dayyan's own wording (voice note, 15 Nov): "Two" as a word here.
     title: "Two engineers who like fixing things properly.",
+    // Both are AI automation engineers and technical account managers (Dayyan, 15 Nov, round 3).
+    // Public-facing and general: no employer is named.
     people: [
       {
         name: "Dayyan Sheikh",
-        role: "Co-founder, engineer",
+        role: "Co-founder, AI automation engineer and technical account manager",
         bio: "Master of Engineering, UCL",
+        proof: "Day job as a technical account manager: explaining tech plainly to non-technical clients and fixing real customers' problems.",
         initials: "DS",
         photo: "/team/dayyan.jpg",
+        email: EMAIL,
+        calendly: CALENDLY,
       },
       {
         name: "Jack Burbridge",
-        role: "Co-founder, engineer",
+        role: "Co-founder, AI automation engineer and technical account manager",
         bio: "Bachelor of Engineering, Exeter",
+        proof: "Day job as a technical account manager: used to solving real customers' problems and keeping the explanations plain.",
         initials: "JB",
         photo: "/team/jack.jpg",
+        email: EMAIL_JACK,
+        calendly: JACK_CALENDLY,
       },
     ],
   },
@@ -75,23 +83,29 @@ export const copy = {
     title: "3 jobs we take off your hands.",
     items: [
       {
-        title: "Quotes and invoices chased",
-        body: "Reminders go out when a quote or invoice has sat too long. Nothing slips.",
+        title: "Quotes and invoices, chased",
+        body: "Money sits unpaid because chasing it feels awkward. We send the polite reminders for you, on time, every time. You get paid sooner.",
       },
       {
-        title: "Enquiries answered",
-        body: "A sensible reply within minutes, and a text back when you miss a call on site.",
+        title: "Enquiries, answered",
+        body: "A missed call on site is a lost job. We text back within minutes and reply to every enquiry sensibly. You win the work you used to miss.",
       },
       {
-        title: "Books kept tidy",
-        body: "Receipts into your accounts, booking reminders, a daily list of what is open.",
+        title: "Books, kept tidy",
+        body: "Receipts in a shoebox, bookings in your head. We file receipts into your accounts and send booking reminders. You get a daily list of what is open.",
       },
     ],
+  },
+  custom: {
+    label: "Something else?",
+    title: "Something else eating your week?",
+    body: "We also build custom, boutique automation workflows around how you already work. If you do it the same way every time, we can probably automate it.",
+    examples: ["Stock and orders", "Customer follow-ups", "Reports", "Rotas", "Paperwork"],
   },
   how: {
     label: "How it works",
     steps: [
-      { title: "A free look", body: "We come to you and see how you work. If nothing is worth fixing, we say so." },
+      { title: "A free look", body: "We see how you work, in person where practical or on a video call. If nothing is worth fixing, we say so." },
       { title: "A 1-page note", body: "1 to 3 fixes, each with a fixed price agreed up front." },
       { title: "Built and handed over", body: "It runs on your own computer. You own it. We stay on hand for 30 days." },
     ],
@@ -99,7 +113,10 @@ export const copy = {
   contact: {
     label: "Contact",
     title: "Tell us the 1 job you would happily never do again.",
-    body: "Or reach either of us directly.",
+    body: "Book a free chat, or email us. No pitch, just a look at how you work.",
+    bookLabel: "Book a free chat",
+    detailsLabel: "Contact details",
+    areaLine: "Based in West London, working across the UK. We come to you wherever practical, or meet on video.",
     calendarLabel: "Book a chat",
   },
 } as const;

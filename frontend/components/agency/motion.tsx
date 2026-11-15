@@ -6,6 +6,7 @@
  * visitor prefers reduced motion: content renders in its final state.
  */
 import { useRef, useState, type ReactNode } from "react";
+import { MARK_CELL, MARK_GRID, MARK_PITCH, MARK_RED, MARK_SIZE, MARK_STROKE, isRedCell } from "@/components/Logo";
 import { motion, useReducedMotion, useScroll, useTransform } from "motion/react";
 
 /** Fades and rises into place the first time it scrolls into view. */
@@ -70,15 +71,12 @@ export function ScrollTicker({ items }: { items: readonly string[] }) {
  * one by one on load; the whole mark then drifts, tilts and settles a little as you scroll.
  * Pure SVG, so it is crisp at any size and weighs almost nothing.
  */
-const GRID = 5;
-const PITCH = 6; // cell (5) + gap (1), the same units as Logo.tsx
-const STROKE = 0.5;
-const RED = "#E50C0E";
+const GRID = MARK_GRID;
+const PITCH = MARK_PITCH;
+const CELL = MARK_CELL;
+const STROKE = MARK_STROKE;
+const RED = MARK_RED;
 const INK = "#101010";
-
-function isRed(row: number, col: number): boolean {
-  return col === 1 || row === 1;
-}
 
 export function HeroArt() {
   const ref = useRef<HTMLDivElement>(null);
@@ -90,27 +88,27 @@ export function HeroArt() {
   const cells = [];
   for (let r = 0; r < GRID; r++) {
     for (let c = 0; c < GRID; c++) {
-      const red = isRed(r, c);
+      const red = isRedCell(r, c);
       const inset = red ? 0 : STROKE / 2;
       cells.push(
         <motion.rect
           key={`${r}-${c}`}
           x={c * PITCH + inset}
           y={r * PITCH + inset}
-          width={5 - inset * 2}
-          height={5 - inset * 2}
+          width={CELL - inset * 2}
+          height={CELL - inset * 2}
           fill={red ? RED : "none"}
           stroke={red ? "none" : INK}
           strokeWidth={red ? 0 : STROKE}
           initial={reduce ? false : { opacity: 0, scale: 0.6 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.5, delay: reduce ? 0 : 0.06 * (r * GRID + c), ease: "easeOut" }}
-          style={{ transformOrigin: `${c * PITCH + 2.5}px ${r * PITCH + 2.5}px` }}
+          style={{ transformOrigin: `${c * PITCH + CELL / 2}px ${r * PITCH + CELL / 2}px` }}
         />,
       );
     }
   }
-  const size = GRID * PITCH - 1;
+  const size = MARK_SIZE;
   return (
     <div ref={ref} className="relative mx-auto w-full max-w-[480px]">
       <motion.svg
