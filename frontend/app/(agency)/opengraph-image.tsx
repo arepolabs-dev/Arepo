@@ -21,7 +21,7 @@ export default function OgImage() {
       >
         <div style={{ fontSize: 40, color: "#E50C0E" }}>Arepo Labs</div>
         <div style={{ fontSize: 76, marginTop: 24, lineHeight: 1.1 }}>
-          Small software fixes for busy local businesses.
+          Practical automation for local businesses.
         </div>
       </div>
     ),
