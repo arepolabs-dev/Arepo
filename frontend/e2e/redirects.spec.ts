@@ -52,8 +52,7 @@ test("sub-paths and queries are kept", async ({ request }) => {
 
 test("/ is not redirected", async ({ request }) => {
   const res = await request.get("/", { maxRedirects: 0 });
-  // 404 until the agency landing page exists (WP2), 200 after; never a redirect.
-  expect([200, 404]).toContain(res.status());
+  expect(res.status()).toBe(200);
   expect(res.headers()["location"]).toBeUndefined();
 });
 
