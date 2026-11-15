@@ -1,5 +1,6 @@
 "use client";
 
+import { PM } from "@/lib/paths";
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
@@ -147,7 +148,7 @@ export function UnlockScreen({ keys = 1, onUnlocked }: { keys?: number; onUnlock
 
   async function leave() {
     await signOut();
-    router.push("/");
+    router.push(PM);
   }
 
   if (codes) {

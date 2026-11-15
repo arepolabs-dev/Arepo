@@ -1,3 +1,5 @@
+import { pm } from "./paths";
+
 // Single registry of the technical metrics Arepo surfaces. The MetricHelp
 // tooltip and the Methodology page both read from this, so every term used in
 // the product has a matching Methodology anchor (id) by construction. Copy is
@@ -198,5 +200,5 @@ export type MetricId = keyof typeof METRICS;
 export const METRIC_LIST: MetricDef[] = Object.values(METRICS);
 
 export function methodologyAnchor(id: string): string {
-  return `/methodology#${id}`;
+  return pm(`/methodology#${id}`);
 }

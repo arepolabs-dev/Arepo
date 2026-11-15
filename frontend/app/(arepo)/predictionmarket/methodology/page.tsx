@@ -1,3 +1,4 @@
+import { pm } from "@/lib/paths";
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import Link from "next/link";
@@ -563,7 +564,7 @@ export default function MethodologyPage() {
           <div className="mt-4 rounded-card border border-arepo-border bg-arepo-surface2 px-5 py-4 text-[15px] leading-relaxed text-arepo-ink2">
             New to prediction markets? Start with{" "}
             <Link
-              href="/how-it-works"
+              href={pm("/how-it-works")}
               className="font-medium text-arepo-ink underline decoration-arepo-borderStrong underline-offset-2 hover:decoration-arepo-ink"
             >
               How Arepo Works

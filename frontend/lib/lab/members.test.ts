@@ -56,7 +56,7 @@ describe("loading", () => {
   it("maps 401 to unauthorized and 404 to not_found", async () => {
     expect(await loadMembers(async () => res(401))).toEqual({ kind: "unauthorized" });
     expect(await loadMembers(async () => res(404, { detail: "Not Found" }))).toEqual({ kind: "not_found" });
-    expect(MEMBERS_SIGNIN_REDIRECT).toBe("/signin?next=/lab/members");
+    expect(MEMBERS_SIGNIN_REDIRECT).toBe("/predictionmarket/signin?next=/predictionmarket/lab/members");
   });
 
   it("reports network failures and server errors without throwing", async () => {

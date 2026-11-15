@@ -1,10 +1,11 @@
+import { pm } from "@/lib/paths";
 import Link from "next/link";
 
 const TABS = [
-  { href: "/lab", label: "Research", key: "research" },
-  { href: "/lab/claude", label: "Claude", key: "claude" },
-  { href: "/lab/members", label: "Members", key: "members" },
-  { href: "/lab/security", label: "Security", key: "security" },
+  { href: pm("/lab"), label: "Research", key: "research" },
+  { href: pm("/lab/claude"), label: "Claude", key: "claude" },
+  { href: pm("/lab/members"), label: "Members", key: "members" },
+  { href: pm("/lab/security"), label: "Security", key: "security" },
 ] as const;
 
 /** Quiet tab switcher shown at the top of the owner-only Lab pages (never in public nav). */

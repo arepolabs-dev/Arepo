@@ -1,5 +1,6 @@
 "use client";
 
+import { pm } from "@/lib/paths";
 import { useState } from "react";
 import { registerAccount, ApiError } from "@/lib/api";
 import {
@@ -49,7 +50,7 @@ export default function SignUpPage() {
         lead="Your account has been created."
         footer={
           <>
-            Already confirmed? <TextLink href="/signin">Sign in</TextLink>.
+            Already confirmed? <TextLink href={pm("/signin")}>Sign in</TextLink>.
           </>
         }
       >
@@ -66,7 +67,7 @@ export default function SignUpPage() {
       lead="Create a free account to choose personalised signal digests and keep their history."
       footer={
         <>
-          Already have an account? <TextLink href="/signin">Sign in</TextLink>.
+          Already have an account? <TextLink href={pm("/signin")}>Sign in</TextLink>.
         </>
       }
     >

@@ -1,5 +1,6 @@
 "use client";
 
+import { pm } from "@/lib/paths";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { loginAccount, ApiError } from "@/lib/api";
@@ -49,8 +50,8 @@ export default function SignInPage() {
       lead="Sign in to review your digests and choose what Arepo sends. The rest of Arepo works without an account."
       footer={
         <>
-          New here? <TextLink href="/signup">Create a free account</TextLink>. Forgot your
-          password? <TextLink href="/forgot">Reset it</TextLink>.
+          New here? <TextLink href={pm("/signup")}>Create a free account</TextLink>. Forgot your
+          password? <TextLink href={pm("/forgot")}>Reset it</TextLink>.
         </>
       }
     >

@@ -1,5 +1,6 @@
 "use client";
 
+import { pm } from "@/lib/paths";
 import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { verifyEmail } from "@/lib/api";
@@ -23,7 +24,7 @@ function VerifyInner() {
   return (
     <AuthShell
       title="Email verification"
-      footer={<TextLink href="/signin">Go to sign in</TextLink>}
+      footer={<TextLink href={pm("/signin")}>Go to sign in</TextLink>}
     >
       {state === "working" && (
         <p className="text-[14px] text-arepo-muted">Verifying your email…</p>

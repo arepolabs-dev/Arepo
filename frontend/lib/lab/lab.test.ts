@@ -44,8 +44,8 @@ describe("dashboard loading", () => {
     expect(url).toMatch(/\/api\/lab\/dashboard$/);
     expect(init.credentials).toBe("include");
     expect(init.cache).toBe("no-store");
-    expect(actionForResult(result)).toEqual({ type: "redirect", to: "/signin?next=/lab" });
-    expect(SIGNIN_REDIRECT).toBe("/signin?next=/lab");
+    expect(actionForResult(result)).toEqual({ type: "redirect", to: "/predictionmarket/signin?next=/predictionmarket/lab" });
+    expect(SIGNIN_REDIRECT).toBe("/predictionmarket/signin?next=/predictionmarket/lab");
   });
 
   it("maps 404 (signed in, not the owner) to not-found", async () => {

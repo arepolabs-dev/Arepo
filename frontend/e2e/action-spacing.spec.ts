@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { VIEWPORTS, liveSignalMarketId } from "./helpers";
+import { PM, VIEWPORTS, liveSignalMarketId } from "./helpers";
 
 /**
  * Action-row spacing acceptance (final runtime acceptance §4). On Signal Lab, the qualification badge
@@ -12,7 +12,7 @@ for (const vp of VIEWPORTS) {
   test(`action row spacing @ ${vp.name}`, async ({ page }) => {
     await page.setViewportSize({ width: vp.width, height: vp.height });
     const id = await liveSignalMarketId(page.request);
-    await page.goto(`/markets/${encodeURIComponent(id)}`, { waitUntil: "networkidle" });
+    await page.goto(`${PM}/markets/${encodeURIComponent(id)}`, { waitUntil: "networkidle" });
     await page.waitForTimeout(300);
     // The per-signal action rows live under a collapsed disclosure; expand it to render them.
     const breakdown = page.getByRole("button", { name: /per-signal breakdown/i });

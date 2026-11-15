@@ -1,4 +1,5 @@
 import { expect, test, type Route } from "@playwright/test";
+import { PM } from "./helpers";
 
 const USER = {
   id: "user-1",
@@ -28,7 +29,7 @@ test("signup sends first and last name and uses production verification wording"
     return json(route, 404, { detail: "Not found" });
   });
 
-  await page.goto("/signup");
+  await page.goto(`${PM}/signup`);
   await page.getByLabel("First name").fill("Dayyan");
   await page.getByLabel("Last name").fill("Sheikh");
   await page.getByLabel("Email").fill("dayyan@example.com");
@@ -63,7 +64,7 @@ test("authenticated session survives refresh, shows initials and signs out", asy
     return json(route, 404, { detail: "Not found" });
   });
 
-  await page.goto("/account");
+  await page.goto(`${PM}/account`);
   await expect(page.getByRole("link", { name: "Your account" })).toHaveText("DS");
   await expect(page.getByRole("tab", { name: "Your digests" })).toBeVisible();
   await expect(page.getByRole("tab", { name: "Preferences" })).toBeVisible();
@@ -78,7 +79,7 @@ test("account page does not expose personalised content when signed out", async 
   await page.route("**/api/**", async (route) => {
     await json(route, 401, { detail: "Unauthorized" });
   });
-  await page.goto("/account");
+  await page.goto(`${PM}/account`);
   await expect(page.getByText("Sign in to review your digests and preferences.")).toBeVisible();
   await expect(page.getByRole("tab")).toHaveCount(0);
 });
@@ -121,7 +122,7 @@ test("category preferences use explicit All semantics and never expose Other", a
     return json(route, 404, { detail: "Not found" });
   });
 
-  await page.goto("/account?tab=preferences");
+  await page.goto(`${PM}/account?tab=preferences`);
   const all = page.getByRole("button", { name: "All", exact: true });
   const crypto = page.getByRole("button", { name: "Crypto", exact: true });
   const sports = page.getByRole("button", { name: "Sports", exact: true });
@@ -154,7 +155,7 @@ test("published digest CTA route resolves to the current Opportunities page", as
     return json(route, 404, { detail: "Not found" });
   });
 
-  await page.goto("/opportunities");
-  await expect(page).toHaveURL(/\/$/);
+  await page.goto(`${PM}/opportunities`);
+  await expect(page).toHaveURL(/\/predictionmarket$/);
   await expect(page.getByTestId("opportunities-page")).toBeVisible();
 });

@@ -1,5 +1,6 @@
 "use client";
 
+import { pm } from "@/lib/paths";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useAsync } from "@/lib/use-async";
@@ -259,7 +260,7 @@ export default function SignalLabPage() {
             comparison period. It does not mean the outcome became more likely or that a trade would
             be profitable. See the{" "}
             <Link
-              href="/methodology#signal-strength"
+              href={pm("/methodology#signal-strength")}
               className="focus-ring font-medium text-arepo-accentActive hover:text-arepo-accentHover"
             >
               methodology
@@ -293,7 +294,7 @@ function SignalCard({ row }: { row: ScanSignalRow }) {
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
           <Link
-            href={`/markets/${encodeURIComponent(row.market_id)}`}
+            href={pm(`/markets/${encodeURIComponent(row.market_id)}`)}
             className="focus-ring font-medium text-arepo-ink hover:text-arepo-accentActive"
           >
             {row.market_question}

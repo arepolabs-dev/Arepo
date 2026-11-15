@@ -1,3 +1,4 @@
+import { pm } from "@/lib/paths";
 import Link from "next/link";
 import type { MarketCard } from "@/lib/types";
 import { formatPercent, formatSignedPercent, titleCase } from "@/lib/format";
@@ -22,8 +23,8 @@ export function MarketCardView({
 }) {
   const active = market.status?.toLowerCase() === "active";
   const href = sourceMode
-    ? `/markets/${encodeURIComponent(market.id)}?mode=${sourceMode}`
-    : `/markets/${encodeURIComponent(market.id)}`;
+    ? pm(`/markets/${encodeURIComponent(market.id)}?mode=${sourceMode}`)
+    : pm(`/markets/${encodeURIComponent(market.id)}`);
   return (
     <Link
       href={href}

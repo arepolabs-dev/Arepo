@@ -1,5 +1,6 @@
 "use client";
 
+import { pm } from "@/lib/paths";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
@@ -82,7 +83,7 @@ function MarketRouteError({
         {mode !== "live" && (
           <button
             type="button"
-            onClick={() => router.replace(`/markets/${encodeURIComponent(id)}?mode=live`)}
+            onClick={() => router.replace(pm(`/markets/${encodeURIComponent(id)}?mode=live`))}
             className="focus-ring rounded-md bg-arepo-accent px-3 py-1.5 text-[13px] font-semibold text-white hover:bg-arepo-accentHover"
           >
             Open in Live
@@ -96,7 +97,7 @@ function MarketRouteError({
           Retry
         </button>
         <Link
-          href="/markets"
+          href={pm("/markets")}
           className="focus-ring rounded-md border border-arepo-border px-3 py-1.5 text-[13px] font-medium text-arepo-ink hover:bg-arepo-surface2"
         >
           Return to search
@@ -182,7 +183,7 @@ export default function MarketDetailPage() {
     <div className="space-y-10">
       <div className="space-y-4">
         <nav aria-label="Breadcrumb" className="flex items-center gap-2 text-[13px] text-arepo-muted">
-          <Link href="/markets" className="focus-ring hover:text-arepo-ink">
+          <Link href={pm("/markets")} className="focus-ring hover:text-arepo-ink">
             Markets
           </Link>
           {market.category && (
@@ -312,7 +313,7 @@ export default function MarketDetailPage() {
         <SectionTitle>Limitations</SectionTitle>
         <p className="text-[13px] text-arepo-muted">
           Probabilities shown are implied by market prices, not verified truths. See{" "}
-          <Link href="/methodology" className="text-arepo-accentActive hover:text-arepo-accentHover">
+          <Link href={pm("/methodology")} className="text-arepo-accentActive hover:text-arepo-accentHover">
             Methodology
           </Link>{" "}
           for caveats.

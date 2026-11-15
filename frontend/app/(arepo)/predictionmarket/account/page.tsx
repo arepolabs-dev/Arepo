@@ -1,5 +1,6 @@
 "use client";
 
+import { pm, PM } from "@/lib/paths";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -49,7 +50,7 @@ export default function AccountPage() {
   function chooseTab(next: AccountTab) {
     setTab(next);
     const query = next === "preferences" ? "?tab=preferences" : "";
-    window.history.replaceState(null, "", `/account${query}`);
+    window.history.replaceState(null, "", pm(`/account${query}`));
   }
 
   if (loading) return <p className="text-arepo-muted">Loading…</p>;
@@ -68,8 +69,8 @@ export default function AccountPage() {
     return (
       <div className="mx-auto max-w-md text-center">
         <PageHeader title="Account" lead="Sign in to review your digests and preferences." />
-        <TextLink href="/signin">Sign in</TextLink>{" "}or{" "}
-        <TextLink href="/signup">create a free account</TextLink>.
+        <TextLink href={pm("/signin")}>Sign in</TextLink>{" "}or{" "}
+        <TextLink href={pm("/signup")}>create a free account</TextLink>.
       </div>
     );
   }
@@ -83,15 +84,15 @@ export default function AccountPage() {
         <div className="flex items-center gap-3 text-[13px]">
           {user.is_superuser ? (
             <>
-              <Link href="/lab" className="focus-ring text-arepo-muted underline hover:text-arepo-ink">
+              <Link href={pm("/lab")} className="focus-ring text-arepo-muted underline hover:text-arepo-ink">
                 Lab
               </Link>
-              <Link href="/lab/security" className="focus-ring text-arepo-muted underline hover:text-arepo-ink">
+              <Link href={pm("/lab/security")} className="focus-ring text-arepo-muted underline hover:text-arepo-ink">
                 Security keys
               </Link>
             </>
           ) : null}
-          <Link href="/forgot" className="focus-ring text-arepo-muted underline hover:text-arepo-ink">
+          <Link href={pm("/forgot")} className="focus-ring text-arepo-muted underline hover:text-arepo-ink">
             Reset password
           </Link>
           <button
@@ -100,7 +101,7 @@ export default function AccountPage() {
               try {
                 await signOut();
               } finally {
-                router.push("/");
+                router.push(PM);
               }
             }}
             className="focus-ring rounded-md border border-arepo-border px-3 py-1.5 font-medium text-arepo-ink hover:bg-arepo-surface2"
@@ -119,7 +120,7 @@ export default function AccountPage() {
         </TabButton>
       </div>
 
-      {tab === "digests" ? <DigestsTab /> : <PreferencesTab onDeleted={() => router.push("/")} />}
+      {tab === "digests" ? <DigestsTab /> : <PreferencesTab onDeleted={() => router.push(PM)} />}
     </div>
     </Revealed>
   );
@@ -483,7 +484,7 @@ function AccountActions({ onDeleted }: { onDeleted: () => void }) {
         Account actions
       </summary>
       <div className="mt-3 flex flex-wrap items-center gap-3">
-        <Link href="/forgot" className="focus-ring underline hover:text-arepo-ink">
+        <Link href={pm("/forgot")} className="focus-ring underline hover:text-arepo-ink">
           Reset password
         </Link>
         {confirming ? (

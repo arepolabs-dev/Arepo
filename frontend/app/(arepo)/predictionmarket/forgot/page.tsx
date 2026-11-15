@@ -1,5 +1,6 @@
 "use client";
 
+import { pm } from "@/lib/paths";
 import { useState } from "react";
 import { forgotPassword } from "@/lib/api";
 import {
@@ -33,7 +34,7 @@ export default function ForgotPasswordPage() {
     <AuthShell
       title="Reset your password"
       lead="Enter your email and we will send a link to choose a new password."
-      footer={<TextLink href="/signin">Back to sign in</TextLink>}
+      footer={<TextLink href={pm("/signin")}>Back to sign in</TextLink>}
     >
       {done ? (
         <FormMessage tone="ok">

@@ -1,3 +1,4 @@
+import { pm } from "@/lib/paths";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { SectionLabel, Disclose, PageHeader } from "@/components/ui";
@@ -251,7 +252,7 @@ export default function HowItWorksPage() {
             A plain-English guide to what Arepo watches, what its numbers mean, and what they do
             not tell you. For the exact formulas, see the{" "}
             <Link
-              href="/methodology"
+              href={pm("/methodology")}
               className="text-arepo-accentActive hover:text-arepo-accentHover"
             >
               Methodology
@@ -423,7 +424,7 @@ export default function HowItWorksPage() {
         </p>
         <div className="flex flex-wrap gap-x-6 gap-y-1">
           <p className="text-[15px]">
-            <Link href="/replay" className="font-medium text-arepo-accentActive hover:text-arepo-accentHover">
+            <Link href={pm("/replay")} className="font-medium text-arepo-accentActive hover:text-arepo-accentHover">
               Try Replay &rarr;
             </Link>
           </p>

@@ -1,5 +1,6 @@
 "use client";
 
+import { pm } from "@/lib/paths";
 import Link from "next/link";
 import { useAsync } from "@/lib/use-async";
 import { useUrlState } from "@/lib/use-url-state";
@@ -151,7 +152,7 @@ function OpportunityCard({ row, rank }: { row: ScanSignalRow; rank: number }) {
           <div className="flex items-center gap-2">
             <span className="font-tabular text-[13px] text-arepo-muted">#{rank}</span>
             <Link
-              href={`/markets/${encodeURIComponent(row.market_id)}`}
+              href={pm(`/markets/${encodeURIComponent(row.market_id)}`)}
               className="focus-ring font-medium text-arepo-ink hover:text-arepo-accentActive"
             >
               {row.market_question}
@@ -206,7 +207,7 @@ function OpportunityCard({ row, rank }: { row: ScanSignalRow; rank: number }) {
           return <InfoChip key={key} label={e.label} desc={e.desc} />;
         })}
         <Link
-          href={`/markets/${encodeURIComponent(row.market_id)}`}
+          href={pm(`/markets/${encodeURIComponent(row.market_id)}`)}
           className="focus-ring text-[12px] underline hover:text-arepo-ink"
         >
           Market detail

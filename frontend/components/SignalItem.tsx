@@ -1,5 +1,6 @@
 "use client";
 
+import { pm } from "@/lib/paths";
 import { useState } from "react";
 import Link from "next/link";
 import type { Signal } from "@/lib/types";
@@ -76,7 +77,7 @@ export function SignalItem({ signal }: { signal: Signal }) {
             {replaceComponentNames(signal.detected)}
           </p>
           <Link
-            href={`/markets/${encodeURIComponent(signal.market_id)}`}
+            href={pm(`/markets/${encodeURIComponent(signal.market_id)}`)}
             className="focus-ring mt-2 flex min-w-0 max-w-reading items-center gap-1 text-[13px] font-medium text-arepo-accentActive hover:text-arepo-accentHover"
           >
             {/* min-w-0 + truncate so a long market question ellipsises within the card instead of a
@@ -244,7 +245,7 @@ export function SignalItem({ signal }: { signal: Signal }) {
           <div className="flex flex-wrap items-center justify-between gap-2 pt-1">
             <p className="text-xs text-arepo-muted">Computed {formatDateTime(signal.computed_at)}</p>
             <Link
-              href="/methodology#signal-strength"
+              href={pm("/methodology#signal-strength")}
               className="focus-ring text-[13px] font-medium text-arepo-accentActive hover:text-arepo-accentHover"
             >
               Learn more &rarr;

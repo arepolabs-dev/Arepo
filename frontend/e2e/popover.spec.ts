@@ -1,11 +1,11 @@
 import { test, expect, type Page } from "@playwright/test";
-import { VIEWPORTS, liveSignalMarketId } from "./helpers";
+import { PM, VIEWPORTS, liveSignalMarketId } from "./helpers";
 
 /** Navigate to a live market-detail page and reveal the per-signal breakdown so the SignalItem
  * MetricHelp popovers (inside a collapsed disclosure) are in the DOM. */
 async function gotoMarketDetail(page: Page) {
   const id = await liveSignalMarketId(page.request);
-  await page.goto(`/markets/${encodeURIComponent(id)}`, { waitUntil: "networkidle" });
+  await page.goto(`${PM}/markets/${encodeURIComponent(id)}`, { waitUntil: "networkidle" });
   await page.waitForTimeout(300);
   // Expand "Show the full per-signal breakdown" if present so every MetricHelp trigger renders.
   const breakdown = page.getByRole("button", { name: /per-signal breakdown/i });

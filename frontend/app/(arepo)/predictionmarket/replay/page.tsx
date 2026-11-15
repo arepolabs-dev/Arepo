@@ -1,5 +1,6 @@
 "use client";
 
+import { pm } from "@/lib/paths";
 import { useMemo } from "react";
 import Link from "next/link";
 import { useAsync } from "@/lib/use-async";
@@ -593,7 +594,7 @@ function MarketRow({ r, horizon }: { r: ReplayRow; horizon: HorizonTab }) {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="min-w-0 flex-1">
           <Link
-            href={`/markets/${encodeURIComponent(r.market_id)}`}
+            href={pm(`/markets/${encodeURIComponent(r.market_id)}`)}
             className="focus-ring font-medium text-arepo-ink hover:text-arepo-accentActive"
           >
             {r.market_question}
@@ -738,7 +739,7 @@ function CohortDetails({
         )}
         <p className="max-w-reading text-[12px] leading-relaxed text-arepo-muted">
           Outcomes are measured from the actual freeze time, never the scheduled boundary. See the{" "}
-          <Link href="/methodology" className="underline hover:text-arepo-ink">
+          <Link href={pm("/methodology")} className="underline hover:text-arepo-ink">
             methodology
           </Link>{" "}
           for the full evaluation rules. Later signal changes never rewrite a frozen prediction.

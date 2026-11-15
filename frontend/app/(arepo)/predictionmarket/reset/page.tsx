@@ -1,5 +1,6 @@
 "use client";
 
+import { pm } from "@/lib/paths";
 import { Suspense, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { resetPassword, ApiError } from "@/lib/api";
@@ -41,7 +42,7 @@ function ResetInner() {
   }
 
   return (
-    <AuthShell title="Choose a new password" footer={<TextLink href="/signin">Sign in</TextLink>}>
+    <AuthShell title="Choose a new password" footer={<TextLink href={pm("/signin")}>Sign in</TextLink>}>
       {done ? (
         <FormMessage tone="ok">
           Your password has been reset. You can now sign in with your new password.

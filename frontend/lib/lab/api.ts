@@ -3,11 +3,12 @@
 // `credentials: "include"`; there is no CSRF header in the existing account convention, and
 // production traffic stays first-party through the Next /api rewrite (API_BASE is "").
 
+import { PM } from "../paths";
 import { API_BASE } from "../api";
 import { announceLocked, lockedDetail } from "../stepup-events";
 import type { AnyCommandTarget, CommandAction, LabCommand, LabDashboardResponse, LabMessage } from "./types";
 
-export const SIGNIN_REDIRECT = "/signin?next=/lab";
+export const SIGNIN_REDIRECT = `${PM}/signin?next=${PM}/lab`;
 
 export type LabLoadResult =
   | { kind: "ok"; data: LabDashboardResponse }

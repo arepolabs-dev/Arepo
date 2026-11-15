@@ -1,5 +1,6 @@
 "use client";
 
+import { pm } from "@/lib/paths";
 import { useEffect, useState } from "react";
 import { unsubscribeDigest } from "@/lib/api";
 import { PageHeader } from "@/components/ui";
@@ -29,14 +30,14 @@ export default function UnsubscribePage() {
             <p>Arepo signal digests are now off.</p>
             <p className="mt-2 text-arepo-muted">
               Your account and security emails are unchanged. You can turn digests back on from{" "}
-              <TextLink href="/account?tab=preferences">Preferences</TextLink>.
+              <TextLink href={pm("/account?tab=preferences")}>Preferences</TextLink>.
             </p>
           </>
         )}
         {state === "error" && (
           <p>
             This link could not be used. Sign in and update your{" "}
-            <TextLink href="/account?tab=preferences">Preferences</TextLink> instead.
+            <TextLink href={pm("/account?tab=preferences")}>Preferences</TextLink> instead.
           </p>
         )}
       </div>
