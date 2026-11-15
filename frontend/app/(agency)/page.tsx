@@ -1,10 +1,12 @@
-import { Header } from "@/components/agency/Header";
-import { HeroArt, Portrait, Reveal, ScrollTicker, SmoothScroll } from "@/components/agency/motion";
-import { CALENDLY, EMAIL, copy } from "@/content/agency/copy";
+import { Banner, Header } from "@/components/agency/Header";
+import { HeroArt, Portrait, Reveal, ScrollTicker } from "@/components/agency/motion";
+import { CALENDLY, EMAIL_GENERAL, contacts, copy } from "@/content/agency/copy";
 
 /*
  * Agency landing page. Editorial, left-aligned, a 12-column grid on desktop that stacks on a phone.
- * 1 booking button (hero). No prices, no "Recent work", no footer, no link to /predictionmarket.
+ * Native scrolling. 1 primary booking button (hero, Arepo red); Contact lists each founder's email
+ * and calendar as plain text links. No prices, no "Recent work", no footer, no link to /predictionmarket.
+ * Order (Dayyan, 15 Nov): hero, ticker, Who we are, What we do, How it works, Contact.
  */
 
 const shell = "mx-auto w-full max-w-shell px-5 sm:px-10";
@@ -14,11 +16,11 @@ const h2 = "font-display text-3xl font-semibold leading-[1.1] tracking-tight tex
 export default function AgencyPage() {
   return (
     <>
-      <SmoothScroll />
       <div id="top" />
+      <Banner />
       <Header />
       <main className="flex-1">
-        {/* Hero: 7 columns of words, 5 of image. */}
+        {/* Hero: 7 columns of words, 5 of the mark. */}
         <section data-testid="hero" className={`${shell} grid items-center gap-10 py-14 sm:py-20 lg:grid-cols-12 lg:py-28`}>
           <div className="lg:col-span-7">
             <Reveal as="p" className={label}>
@@ -35,14 +37,15 @@ export default function AgencyPage() {
             <Reveal delay={0.24} className="mt-9 flex flex-wrap items-center gap-x-5 gap-y-3">
               <a
                 href={CALENDLY}
-                className="focus-ring inline-block rounded-control bg-arepo-ink px-6 py-3.5 text-base font-medium text-white transition-colors hover:bg-arepo-accent"
+                data-testid="primary-cta"
+                className="focus-ring inline-block rounded-control bg-arepo-accent px-6 py-3.5 text-base font-medium text-arepo-accentFg shadow-arepo-card transition-colors hover:bg-arepo-accentHover active:bg-arepo-accentActive"
               >
                 {copy.hero.cta}
               </a>
               <span className="text-sm text-arepo-muted">
                 {copy.hero.emailLead}{" "}
-                <a href={`mailto:${EMAIL}`} className="focus-ring text-arepo-ink underline underline-offset-4">
-                  {EMAIL}
+                <a href={`mailto:${EMAIL_GENERAL}`} className="focus-ring text-arepo-ink underline underline-offset-4">
+                  {EMAIL_GENERAL}
                 </a>
               </span>
             </Reveal>
@@ -54,8 +57,34 @@ export default function AgencyPage() {
 
         <ScrollTicker items={copy.ticker} />
 
+        {/* Who we are: 2 portraits that unveil as you scroll. Dayyan left, Jack right. */}
+        <section id="who" className={`${shell} py-20 sm:py-28`}>
+          <div className="grid gap-10 lg:grid-cols-12">
+            <div className="lg:col-span-4">
+              <Reveal as="p" className={label}>
+                {copy.who.label}
+              </Reveal>
+              <Reveal as="h2" delay={0.08} className={`mt-4 max-w-[14ch] ${h2}`}>
+                {copy.who.title}
+              </Reveal>
+            </div>
+            <ul className="grid gap-8 sm:grid-cols-2 lg:col-span-8 lg:col-start-5">
+              {copy.who.people.map((p, i) => (
+                <li key={p.name} className={i === 1 ? "sm:mt-16" : ""}>
+                  <Portrait src={p.photo} alt={p.name} initials={p.initials} />
+                  <Reveal delay={0.1} className="mt-5">
+                    <h3 className="font-display text-2xl font-medium tracking-tight text-arepo-ink">{p.name}</h3>
+                    <p className="mt-1 text-sm uppercase tracking-[0.14em] text-arepo-muted">{p.role}</p>
+                    <p className="mt-3 max-w-[34ch] leading-relaxed text-arepo-ink2">{p.bio}</p>
+                  </Reveal>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </section>
+
         {/* What we do: label left, 3 numbered rows right, hairlines between. */}
-        <section id="what" className={`${shell} grid gap-10 py-20 sm:py-28 lg:grid-cols-12`}>
+        <section id="what" className={`${shell} grid gap-10 border-t border-arepo-border py-20 sm:py-28 lg:grid-cols-12`}>
           <div className="lg:col-span-4">
             <Reveal as="p" className={label}>
               {copy.what.label}
@@ -96,33 +125,8 @@ export default function AgencyPage() {
           </div>
         </section>
 
-        {/* Who we are: 2 portraits that unveil as you scroll. */}
-        <section id="who" className={`${shell} py-20 sm:py-28`}>
-          <div className="grid gap-10 lg:grid-cols-12">
-            <div className="lg:col-span-4">
-              <Reveal as="p" className={label}>
-                {copy.who.label}
-              </Reveal>
-              <Reveal as="h2" delay={0.08} className={`mt-4 max-w-[14ch] ${h2}`}>
-                {copy.who.title}
-              </Reveal>
-            </div>
-            <ul className="grid gap-8 sm:grid-cols-2 lg:col-span-8 lg:col-start-5">
-              {copy.who.people.map((p, i) => (
-                <li key={p.name} className={i === 1 ? "sm:mt-16" : ""}>
-                  <Portrait src={p.photo} alt={p.name} initials={p.initials} />
-                  <Reveal delay={0.1} className="mt-5">
-                    <h3 className="font-display text-2xl font-medium tracking-tight text-arepo-ink">{p.name}</h3>
-                    <p className="mt-1 text-sm uppercase tracking-[0.14em] text-arepo-muted">{p.role}</p>
-                    <p className="mt-3 max-w-[34ch] leading-relaxed text-arepo-ink2">{p.bio}</p>
-                  </Reveal>
-                </li>
-              ))}
-            </ul>
-          </div>
-        </section>
-
-        {/* Contact: one big line and the email. The booking button lives in the hero only. */}
+        {/* Contact: one big line, the general address, then each founder's own email and calendar
+            as plain text links. The only booking button lives in the hero. */}
         <section id="contact" data-testid="final" className={`${shell} border-t border-arepo-border py-20 sm:py-28`}>
           <Reveal as="p" className={label}>
             {copy.contact.label}
@@ -132,13 +136,34 @@ export default function AgencyPage() {
           </Reveal>
           <Reveal delay={0.16} className="mt-8">
             <a
-              href={`mailto:${EMAIL}`}
+              href={`mailto:${EMAIL_GENERAL}`}
               className="focus-ring font-display text-2xl font-medium tracking-tight text-arepo-ink underline decoration-arepo-accent decoration-2 underline-offset-8 hover:text-arepo-accent sm:text-4xl"
             >
-              {EMAIL}
+              {EMAIL_GENERAL}
             </a>
             <p className="mt-5 text-arepo-muted">{copy.contact.body}</p>
           </Reveal>
+          <ul className="mt-10 grid gap-8 sm:grid-cols-2 lg:max-w-[48rem]">
+            {contacts.map((c, i) => (
+              <Reveal as="li" key={c.email} delay={0.2 + 0.1 * i} className="border-t border-arepo-border pt-5">
+                <p className="font-display text-lg font-medium tracking-tight text-arepo-ink">{c.name}</p>
+                <p className="mt-2 flex flex-wrap gap-x-5 gap-y-1 text-sm">
+                  <a href={`mailto:${c.email}`} className="focus-ring text-arepo-ink underline underline-offset-4 hover:text-arepo-accent">
+                    {c.email}
+                  </a>
+                  {c.calendly ? (
+                    <a
+                      href={c.calendly}
+                      data-testid="calendar-link"
+                      className="focus-ring text-arepo-muted underline underline-offset-4 hover:text-arepo-accent"
+                    >
+                      {copy.contact.calendarLabel}
+                    </a>
+                  ) : null}
+                </p>
+              </Reveal>
+            ))}
+          </ul>
         </section>
       </main>
     </>

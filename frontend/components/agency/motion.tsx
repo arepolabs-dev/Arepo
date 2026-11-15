@@ -1,23 +1,12 @@
 "use client";
 
 /**
- * Scroll-driven motion for the agency landing page. Every effect is skipped when the visitor
- * prefers reduced motion: content renders in its final state, Lenis is never started.
+ * Scroll-driven motion for the agency landing page. Scrolling itself is native (no smooth-scroll
+ * library: Dayyan found it too fast and not intuitive, 15 Nov). Every effect is skipped when the
+ * visitor prefers reduced motion: content renders in its final state.
  */
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useRef, useState, type ReactNode } from "react";
 import { motion, useReducedMotion, useScroll, useTransform } from "motion/react";
-import Lenis from "lenis";
-
-/** Smooth, inertial scrolling (Lenis). Mounted once in the page; renders nothing. */
-export function SmoothScroll() {
-  const reduce = useReducedMotion();
-  useEffect(() => {
-    if (reduce) return;
-    const lenis = new Lenis({ autoRaf: true, lerp: 0.12 });
-    return () => lenis.destroy();
-  }, [reduce]);
-  return null;
-}
 
 /** Fades and rises into place the first time it scrolls into view. */
 export function Reveal({
@@ -40,7 +29,7 @@ export function Reveal({
   return (
     <Tag
       className={className}
-      initial={{ opacity: 0, y: 28 }}
+      initial={{ opacity: 0, y: 20 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, margin: "0px 0px -12% 0px" }}
       transition={{ duration: 0.7, delay, ease: [0.22, 1, 0.36, 1] }}
@@ -50,12 +39,12 @@ export function Reveal({
   );
 }
 
-/** A line of words that slides sideways as the page scrolls. */
+/** A line of words that slides gently sideways as the page scrolls. */
 export function ScrollTicker({ items }: { items: readonly string[] }) {
   const ref = useRef<HTMLDivElement>(null);
   const reduce = useReducedMotion();
   const { scrollYProgress } = useScroll({ target: ref, offset: ["start end", "end start"] });
-  const x = useTransform(scrollYProgress, [0, 1], ["4%", "-28%"]);
+  const x = useTransform(scrollYProgress, [0, 1], ["2%", "-14%"]);
   const row = [...items, ...items, ...items];
   return (
     <div ref={ref} className="overflow-hidden border-y border-arepo-border py-5" aria-hidden="true">
@@ -75,41 +64,47 @@ export function ScrollTicker({ items }: { items: readonly string[] }) {
 }
 
 /**
- * Hero image: the Arepo grid mark grown into a 9 x 9 field, drawn by us (no stock). The filled
- * row and column echo the logo; a scattering of "jobs" light up and the whole field drifts and
- * tilts with the scroll. Pure SVG, so it is crisp at any size and weighs almost nothing.
+ * Hero image: the real Arepo mark, big. A 5 x 5 grid where the 2nd column and the 2nd row are
+ * filled Arepo red (the offset cross) and the other 16 cells are outlined in ink, exactly as in
+ * `design-assets/brand/AREPO logo (no word).png` (and `components/Logo.tsx`). The cells pop in
+ * one by one on load; the whole mark then drifts, tilts and settles a little as you scroll.
+ * Pure SVG, so it is crisp at any size and weighs almost nothing.
  */
-const GRID = 9;
-const PITCH = 6;
-const LIT = new Set(["3-5", "5-2", "6-6", "4-7", "7-3", "2-7", "6-0", "8-5"]);
+const GRID = 5;
+const PITCH = 6; // cell (5) + gap (1), the same units as Logo.tsx
+const STROKE = 0.5;
+const RED = "#E50C0E";
+const INK = "#101010";
+
+function isRed(row: number, col: number): boolean {
+  return col === 1 || row === 1;
+}
 
 export function HeroArt() {
   const ref = useRef<HTMLDivElement>(null);
   const reduce = useReducedMotion();
   const { scrollYProgress } = useScroll({ target: ref, offset: ["start start", "end start"] });
-  const y = useTransform(scrollYProgress, [0, 1], [0, 120]);
+  const y = useTransform(scrollYProgress, [0, 1], [0, 48]);
   const rotate = useTransform(scrollYProgress, [0, 1], [0, -6]);
-  const scale = useTransform(scrollYProgress, [0, 1], [1, 0.92]);
+  const scale = useTransform(scrollYProgress, [0, 1], [1, 0.96]);
   const cells = [];
   for (let r = 0; r < GRID; r++) {
     for (let c = 0; c < GRID; c++) {
-      const key = `${r}-${c}`;
-      const cross = r === 1 || c === 1;
-      const lit = LIT.has(key);
+      const red = isRed(r, c);
+      const inset = red ? 0 : STROKE / 2;
       cells.push(
         <motion.rect
-          key={key}
-          x={c * PITCH + 0.5}
-          y={r * PITCH + 0.5}
-          width={4}
-          height={4}
-          rx={0.6}
-          fill={cross ? "#E50C0E" : lit ? "#101010" : "none"}
-          stroke={cross || lit ? "none" : "#D6D2CB"}
-          strokeWidth={cross || lit ? 0 : 0.5}
+          key={`${r}-${c}`}
+          x={c * PITCH + inset}
+          y={r * PITCH + inset}
+          width={5 - inset * 2}
+          height={5 - inset * 2}
+          fill={red ? RED : "none"}
+          stroke={red ? "none" : INK}
+          strokeWidth={red ? 0 : STROKE}
           initial={reduce ? false : { opacity: 0, scale: 0.6 }}
           animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.5, delay: reduce ? 0 : 0.015 * (r * GRID + c), ease: "easeOut" }}
+          transition={{ duration: 0.5, delay: reduce ? 0 : 0.06 * (r * GRID + c), ease: "easeOut" }}
           style={{ transformOrigin: `${c * PITCH + 2.5}px ${r * PITCH + 2.5}px` }}
         />,
       );
@@ -117,13 +112,13 @@ export function HeroArt() {
   }
   const size = GRID * PITCH - 1;
   return (
-    <div ref={ref} className="relative mx-auto w-full max-w-[520px]">
+    <div ref={ref} className="relative mx-auto w-full max-w-[480px]">
       <motion.svg
         viewBox={`0 0 ${size} ${size}`}
         className="block h-auto w-full"
         style={reduce ? undefined : { y, rotate, scale }}
         role="img"
-        aria-label="The Arepo grid: a field of small jobs, the ones in red taken care of."
+        aria-label="The Arepo mark: a 5 by 5 grid with 1 row and 1 column in red."
       >
         {cells}
       </motion.svg>
