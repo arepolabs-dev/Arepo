@@ -133,7 +133,13 @@ function withDefaults(table: TableName, r: AnyRow): AnyRow {
   }
   if (table === "replies") row.reply_type ??= "unclassified";
   if (table === "events") row.at ??= now;
-  if (table === "mailboxes") row.provider ??= "gmail";
+  if (table === "mailboxes") {
+    row.provider ??= "gmail";
+    row.kind ??= "personal";
+    row.status ??= "connected";
+    row.send_as_verified ??= false;
+  }
+  if (table === "plan_targets") row.cumulative ??= true;
   if (table === "checklist") row.sort_order ??= 0;
   return row;
 }

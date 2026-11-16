@@ -139,6 +139,7 @@ export interface Test {
   decision_rule: string | null;
   result: string | null;
   decided_at: Iso | null;
+  winner: "a" | "b" | "none" | null;
 }
 
 export interface OutreachEmail {
@@ -161,6 +162,10 @@ export interface OutreachEmail {
   rfc_message_id: string | null;
   follow_up_of: Uuid | null;
   status: OutreachStatus;
+  mailbox_id: Uuid | null;
+  from_address: string | null;
+  sent_via: "gmail" | "manual" | null;
+  send_error: string | null;
 }
 
 export interface Reply {
@@ -177,6 +182,9 @@ export interface Reply {
   reply_type: ReplyType;
   classified_by: Uuid | null;
   classified_at: Iso | null;
+  mailbox_id: Uuid | null;
+  matched_by: "thread" | "in_reply_to" | "address" | "bounce" | null;
+  subject: string | null;
 }
 
 export interface EventRow {
@@ -198,6 +206,15 @@ export interface Mailbox {
   history_id: string | null;
   last_sync_at: Iso | null;
   last_error: string | null;
+  /** Personal Gmail account (sends as the person's arepolabs alias) or the shared enquiries one. */
+  kind: "personal" | "shared";
+  /** The arepolabs address messages are sent as (a verified Gmail "Send mail as" alias). */
+  send_as: string | null;
+  send_as_name: string | null;
+  send_as_verified: boolean;
+  status: "connected" | "needs_reconnect";
+  connected_at: Iso | null;
+  scopes: string | null;
 }
 
 export interface ChecklistItem {
@@ -209,6 +226,31 @@ export interface ChecklistItem {
   done_at: Iso | null;
   /** The plan calls this column "order"; it is `sort_order` in SQL because ORDER is reserved. */
   sort_order: number;
+}
+
+export interface PlanTarget {
+  id: Uuid;
+  scope: "week" | "headline" | "rate";
+  period: string;
+  metric: string;
+  target: number;
+  cumulative: boolean;
+  note: string | null;
+}
+
+/** Mail in the shared enquiries mailbox that matched no prospect. */
+export interface Enquiry {
+  id: Uuid;
+  mailbox_id: Uuid | null;
+  gmail_message_id: string;
+  gmail_thread_id: string | null;
+  from_address: string;
+  from_name: string | null;
+  subject: string | null;
+  snippet: string | null;
+  received_at: Iso;
+  handled_at: Iso | null;
+  handled_by: Uuid | null;
 }
 
 /** Table name -> row type. */
@@ -223,6 +265,8 @@ export interface Phase1Tables {
   events: EventRow;
   mailboxes: Mailbox;
   checklist: ChecklistItem;
+  plan_targets: PlanTarget;
+  enquiries: Enquiry;
 }
 
 export type TableName = keyof Phase1Tables;
@@ -241,6 +285,8 @@ export const TABLE_NAMES: TableName[] = [
   "events",
   "mailboxes",
   "checklist",
+  "plan_targets",
+  "enquiries",
 ];
 
 export const PIPELINE_STAGES: ProspectStatus[] = [
