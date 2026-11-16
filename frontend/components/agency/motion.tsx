@@ -81,10 +81,12 @@ const OUTLINE = MARK_OUTLINE.light; // the approved light mark: warm-grey outlin
 export function HeroArt() {
   const ref = useRef<HTMLDivElement>(null);
   const reduce = useReducedMotion();
-  const { scrollYProgress } = useScroll({ target: ref, offset: ["start start", "end start"] });
-  const y = useTransform(scrollYProgress, [0, 1], [0, 48]);
-  const rotate = useTransform(scrollYProgress, [0, 1], [0, -6]);
-  const scale = useTransform(scrollYProgress, [0, 1], [1, 0.96]);
+  // Dayyan, 16 Nov 00:11: start the rotation earlier. It now begins with the very first scroll
+  // (page scroll 0 to 700px) instead of waiting for the mark to reach the top of the screen.
+  const { scrollY } = useScroll();
+  const y = useTransform(scrollY, [0, 700], [0, 48]);
+  const rotate = useTransform(scrollY, [0, 700], [0, -6]);
+  const scale = useTransform(scrollY, [0, 700], [1, 0.96]);
   const cells = [];
   for (let r = 0; r < GRID; r++) {
     for (let c = 0; c < GRID; c++) {
