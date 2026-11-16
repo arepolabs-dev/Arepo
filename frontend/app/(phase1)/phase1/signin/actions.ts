@@ -26,7 +26,9 @@ export async function sendMagicLink(_prev: SigninState, formData: FormData): Pro
     `https://${h.get("host") ?? "localhost:3000"}`;
   const { error } = await createSessionClient().auth.signInWithOtp({
     email,
-    options: { emailRedirectTo: `${origin}/phase1/auth/callback`, shouldCreateUser: false },
+    // Only allowlisted addresses reach this line (checked above), so the first link creates their
+    // account: no one has to add auth users by hand (16 Nov).
+    options: { emailRedirectTo: `${origin}/phase1/auth/callback`, shouldCreateUser: true },
   });
   if (error) {
     console.error("phase1 magic link error:", error.message);
