@@ -1,4 +1,5 @@
 import { test, expect } from "@playwright/test";
+import { PM } from "./helpers";
 
 /**
  * Market-route stability smoke tests (final runtime acceptance §6). Both supplied market IDs must
@@ -12,7 +13,7 @@ for (const id of IDS) {
   test(`/markets/${id} direct navigation renders`, async ({ page }) => {
     const errors: string[] = [];
     page.on("pageerror", (e) => errors.push(String(e)));
-    const resp = await page.goto(`/markets/${id}`, { waitUntil: "networkidle" });
+    const resp = await page.goto(`${PM}/markets/${id}`, { waitUntil: "networkidle" });
     expect(resp?.status(), `status for /markets/${id}`).toBeLessThan(400);
     await expect(page.locator("main")).toBeVisible();
     // No vendor-chunk / module-not-found error.
@@ -21,15 +22,15 @@ for (const id of IDS) {
   });
 
   test(`/markets/${id} survives refresh`, async ({ page }) => {
-    await page.goto(`/markets/${id}`, { waitUntil: "networkidle" });
+    await page.goto(`${PM}/markets/${id}`, { waitUntil: "networkidle" });
     await page.reload({ waitUntil: "networkidle" });
     await expect(page.locator("main")).toBeVisible();
   });
 }
 
 test("Back/Forward works between the two market routes", async ({ page }) => {
-  await page.goto(`/markets/${IDS[0]}`, { waitUntil: "networkidle" });
-  await page.goto(`/markets/${IDS[1]}`, { waitUntil: "networkidle" });
+  await page.goto(`${PM}/markets/${IDS[0]}`, { waitUntil: "networkidle" });
+  await page.goto(`${PM}/markets/${IDS[1]}`, { waitUntil: "networkidle" });
   await page.goBack({ waitUntil: "networkidle" });
   expect(page.url()).toContain(IDS[0]);
   await expect(page.locator("main")).toBeVisible();
@@ -39,9 +40,9 @@ test("Back/Forward works between the two market routes", async ({ page }) => {
 });
 
 test("client-side navigation from Explore into a market works", async ({ page }) => {
-  await page.goto("/markets", { waitUntil: "networkidle" });
+  await page.goto(`${PM}/markets`, { waitUntil: "networkidle" });
   await expect(page.locator("main")).toBeVisible();
   // Navigate directly (the market list content varies); this asserts SPA nav doesn't break chunks.
-  await page.goto(`/markets/${IDS[0]}`, { waitUntil: "networkidle" });
+  await page.goto(`${PM}/markets/${IDS[0]}`, { waitUntil: "networkidle" });
   await expect(page.locator("main")).toBeVisible();
 });

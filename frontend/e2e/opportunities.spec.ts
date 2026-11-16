@@ -1,5 +1,5 @@
 import { test, expect, type Page } from "@playwright/test";
-import { VIEWPORTS, expectNoHorizontalOverflow } from "./helpers";
+import { PM, VIEWPORTS, expectNoHorizontalOverflow } from "./helpers";
 
 /**
  * Opportunities (public top 20) acceptance (final-completion prompt B1, D1, F3). Real Next app
@@ -9,7 +9,7 @@ import { VIEWPORTS, expectNoHorizontalOverflow } from "./helpers";
  * is no HTTP/pagination jargon in the primary view.
  */
 async function load(page: Page, query = "") {
-  await page.goto(`/${query}`, { waitUntil: "networkidle" });
+  await page.goto(`${PM}${query}`, { waitUntil: "networkidle" });
   await expect(page.getByTestId("opportunities-page")).toBeVisible();
 }
 

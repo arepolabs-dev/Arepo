@@ -1,5 +1,6 @@
 "use client";
 
+import { pm, PM } from "@/lib/paths";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
@@ -15,7 +16,7 @@ function AuthLink({ pathname }: { pathname: string }) {
     // Signed in, but this account needs its security key: a quiet padlock that opens the unlock.
     return (
       <Link
-        href="/account"
+        href={pm("/account")}
         aria-label="Unlock your account"
         title="Unlock your account"
         className="focus-ring inline-flex h-9 w-9 items-center justify-center rounded-full border border-arepo-border text-arepo-ink hover:bg-arepo-surface2"
@@ -28,7 +29,7 @@ function AuthLink({ pathname }: { pathname: string }) {
       </Link>
     );
   }
-  const href = user ? "/account" : "/signin";
+  const href = user ? pm("/account") : pm("/signin");
   const label = user ? initialsForUser(user) : "Sign in";
   const active = pathname.startsWith(href);
   return (
@@ -51,16 +52,16 @@ function AuthLink({ pathname }: { pathname: string }) {
 }
 
 const NAV_LINKS = [
-  { href: "/", label: "Opportunities" },
-  { href: "/markets", label: "Explore" },
-  { href: "/signals", label: "Signal Lab" },
-  { href: "/replay", label: "Replay" },
-  { href: "/how-it-works", label: "How It Works" },
-  { href: "/methodology", label: "Methodology" },
+  { href: pm("/"), label: "Opportunities" },
+  { href: pm("/markets"), label: "Explore" },
+  { href: pm("/signals"), label: "Signal Lab" },
+  { href: pm("/replay"), label: "Replay" },
+  { href: pm("/how-it-works"), label: "How It Works" },
+  { href: pm("/methodology"), label: "Methodology" },
 ];
 
 function isActive(pathname: string, href: string): boolean {
-  return href === "/" ? pathname === "/" : pathname.startsWith(href);
+  return href === PM ? pathname === PM : pathname.startsWith(href);
 }
 
 /** The primary nav links. Rendered inline on desktop and as a wrapping row on
@@ -104,7 +105,7 @@ export function TopBar() {
             link forcing the header — and therefore the whole document — wider than the viewport
             (final runtime acceptance §3). The controls no longer carry shrink-0 for the same reason. */}
         <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 py-3.5">
-          <Link href="/" className="focus-ring shrink-0 rounded-md" aria-label="Arepo home">
+          <Link href={pm("/")} className="focus-ring shrink-0 rounded-md" aria-label="Arepo home">
             <Logo size={34} />
           </Link>
           {/* Desktop: spread across the available width, no scrolling. */}

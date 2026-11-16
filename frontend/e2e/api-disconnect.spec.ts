@@ -1,4 +1,5 @@
 import { test, expect } from "@playwright/test";
+import { PM } from "./helpers";
 
 /**
  * API disconnection acceptance (final runtime acceptance §7). When /api/status fails, the UI must
@@ -35,7 +36,7 @@ test("disconnected → bounded retries → automatic recovery, no unhandled reje
     else await route.continue();
   });
 
-  await page.goto("/signals", { waitUntil: "domcontentloaded" });
+  await page.goto(`${PM}/signals`, { waitUntil: "domcontentloaded" });
 
   // One clear disconnected state appears.
   await expect(page.getByTestId("api-disconnected")).toBeVisible({ timeout: 15000 });

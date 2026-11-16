@@ -1,5 +1,6 @@
 "use client";
 
+import { pm } from "@/lib/paths";
 import Link from "next/link";
 import type { OpportunityCard } from "@/lib/types";
 import { formatPercent } from "@/lib/format";
@@ -29,7 +30,7 @@ function timeLeft(hours: number | null): string {
  * an accessible popover. This is the "lead with the conclusion, demote the score" redesign.
  */
 export function OpportunityCardView({ card }: { card: OpportunityCard }) {
-  const href = `/markets/${encodeURIComponent(card.market_id)}`;
+  const href = pm(`/markets/${encodeURIComponent(card.market_id)}`);
   const band = priorityBand(card.research_priority);
   const dir = directionLabel(card.direction, card.outcome);
 

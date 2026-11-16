@@ -1,4 +1,5 @@
 import { expect, test, type Page, type Route } from "@playwright/test";
+import { PM } from "./helpers";
 
 /**
  * Security keys UI against a mocked API and a stubbed navigator.credentials (no real
@@ -172,7 +173,7 @@ test("unlock chooser: calm default, phone link sends method + hints and is remem
   const state: State = { unlocked: false, trusted: false, bodies: {} };
   await mockApi(page, state);
   await stubWebAuthn(page);
-  await page.goto("/lab/security");
+  await page.goto(`${PM}/lab/security`);
 
   const screen = page.getByTestId("unlock-screen");
   await expect(screen.getByRole("heading", { name: "Unlock your account" })).toBeVisible();
@@ -203,7 +204,7 @@ test("a failed attempt shows one browser tip for that method", async ({ page }) 
   const state: State = { unlocked: false, trusted: false, bodies: {} };
   await mockApi(page, state);
   await stubWebAuthn(page, { fail: true });
-  await page.goto("/lab/security");
+  await page.goto(`${PM}/lab/security`);
   const screen = page.getByTestId("unlock-screen");
   await screen.getByRole("button", { name: "Security key" }).click();
   await expect(screen.getByRole("status")).toContainText("Cancelled");
@@ -217,7 +218,7 @@ test("Lab > Security shows the key and devices; trust is one click plus a key ta
   const state: State = { unlocked: true, trusted: false, bodies: {} };
   await mockApi(page, state);
   await stubWebAuthn(page);
-  await page.goto("/lab/security");
+  await page.goto(`${PM}/lab/security`);
 
   await expect(page.getByText("Dayyan's Personal MacBook Touch ID")).toBeVisible();
   const list = page.getByRole("list", { name: "Devices" });
@@ -263,7 +264,7 @@ test("add-key offers the three methods and steers creation", async ({ page }) =>
     }
     return json(route, 201, { key: { ...KEY, id: 2, nickname: "YubiKey", transports: ["usb"], synced: false }, recovery_codes: null });
   });
-  await page.goto("/lab/security");
+  await page.goto(`${PM}/lab/security`);
   const group = page.getByRole("group", { name: "Add a key with" });
   await expect(group.getByRole("button")).toHaveText([
     "This device (Touch ID / Face ID)",

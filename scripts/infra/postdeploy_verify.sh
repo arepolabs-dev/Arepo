@@ -30,8 +30,21 @@ probe "markets/Explore (first)"     "$API/api/markets?limit=20"        45 200
 probe "markets/Explore (cached)"    "$API/api/markets?limit=20"         5 200
 probe "status poll"                 "$API/api/status"                   10 200
 echo "== Frontend via Vercel rewrite"
-probe "www home"                    "$WWW/"                             10 200
+probe "www home (/)"                "$WWW/"                             10 200
+probe "www /predictionmarket"       "$WWW/predictionmarket"             10 200
+probe "www /predictionmarket/markets" "$WWW/predictionmarket/markets"   10 200
 probe "www -> /api/status"          "$WWW/api/status"                   15 200
+redirect_probe() {  # label url expected_location_path (308 expected, Location path compared)
+  local out code loc
+  out=$(curl -s -m 30 -o /dev/null -w "%{http_code} %{redirect_url}" "$2")
+  code=${out%% *}; loc=${out#* }
+  local ok=PASS
+  { [ "$code" = 308 ] && [ "$loc" = "$WWW$3" ]; } || { ok=FAIL; fail=1; }
+  printf '%-4s %-34s code=%s -> %s   expect 308 -> %s\n' "$ok" "$1" "$code" "$loc" "$WWW$3"
+  sleep 1
+}
+redirect_probe "old /markets"           "$WWW/markets"                 /predictionmarket/markets
+redirect_probe "old /verify?token (qs)" "$WWW/verify?token=x"          "/predictionmarket/verify?token=x"
 code=$(curl -s -m 30 -o /dev/null -w "%{http_code}" https://arepolabs.com/)
 printf '%-4s %-34s code=%s   expect 308 (apex -> www)\n' "$([ "$code" = 308 ] && echo PASS || { fail=1; echo FAIL; })" "apex redirect" "$code"
 

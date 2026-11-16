@@ -1,5 +1,5 @@
 import { test, expect, type Page } from "@playwright/test";
-import { VIEWPORTS, expectNoHorizontalOverflow } from "./helpers";
+import { PM, VIEWPORTS, expectNoHorizontalOverflow } from "./helpers";
 
 /**
  * Redesigned, results-first Replay acceptance (FINAL REPLAY UX OVERRIDE). Real Next app (:3000) +
@@ -10,7 +10,7 @@ import { VIEWPORTS, expectNoHorizontalOverflow } from "./helpers";
  * cards.
  */
 async function loadReplay(page: Page, query = "") {
-  await page.goto(`/replay${query}`, { waitUntil: "networkidle" });
+  await page.goto(`${PM}/replay${query}`, { waitUntil: "networkidle" });
   await expect(page.getByTestId("replay-page")).toBeVisible();
   await expect(page.getByTestId("horizon-tabs")).toBeVisible({ timeout: 15000 });
 }
@@ -152,7 +152,7 @@ test("disconnected API shows a clear state and recovers", async ({ page }) => {
     if (down) await route.abort("connectionrefused");
     else await route.continue();
   });
-  await page.goto("/replay", { waitUntil: "domcontentloaded" });
+  await page.goto(`${PM}/replay`, { waitUntil: "domcontentloaded" });
   await expect(page.getByTestId("replay-page")).toBeVisible();
   await expect(page.getByTestId("horizon-tabs")).toHaveCount(0, { timeout: 15000 });
   down = false;

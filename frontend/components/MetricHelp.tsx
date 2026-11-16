@@ -1,5 +1,6 @@
 "use client";
 
+import { pm } from "@/lib/paths";
 import Link from "next/link";
 import { METRICS, type MetricId } from "@/lib/metrics";
 import { Popover } from "./Popover";
@@ -46,7 +47,7 @@ export function MetricHelp({
         {def.interpretation}
       </span>
       <Link
-        href={`/methodology#${def.id}`}
+        href={pm(`/methodology#${def.id}`)}
         className="focus-ring mt-2 inline-block text-sm font-medium text-arepo-accentActive hover:text-arepo-accentHover"
       >
         Learn more &rarr;

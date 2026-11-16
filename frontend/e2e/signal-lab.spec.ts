@@ -1,5 +1,5 @@
 import { test, expect, type Page } from "@playwright/test";
-import { VIEWPORTS, expectNoHorizontalOverflow } from "./helpers";
+import { PM, VIEWPORTS, expectNoHorizontalOverflow } from "./helpers";
 
 /**
  * Complete-scan Signal Lab acceptance (prompt sections 10, 11, 22). Runs the real Next app (:3000)
@@ -10,7 +10,7 @@ import { VIEWPORTS, expectNoHorizontalOverflow } from "./helpers";
  */
 
 async function loadSignals(page: Page, query = "") {
-  await page.goto(`/signals${query}`, { waitUntil: "networkidle" });
+  await page.goto(`${PM}/signals${query}`, { waitUntil: "networkidle" });
   await expect(page.getByTestId("signal-lab")).toBeVisible();
   await expect(page.getByTestId("scan-status")).toBeVisible({ timeout: 15000 });
 }
@@ -133,7 +133,7 @@ test("disconnected scan API shows a clear state and recovers", async ({ page }) 
     if (down) await route.abort("connectionrefused");
     else await route.continue();
   });
-  await page.goto("/signals", { waitUntil: "domcontentloaded" });
+  await page.goto(`${PM}/signals`, { waitUntil: "domcontentloaded" });
   // The page shell survives a failed scan-status fetch (no crash, no blank page) and the headline
   // does not render because the status did not load.
   await expect(page.getByTestId("signal-lab")).toBeVisible();
@@ -146,7 +146,7 @@ test("disconnected scan API shows a clear state and recovers", async ({ page }) 
 
 test("lab signal engine section renders from the dev fixture without leaking embargoed numbers", async ({ page }) => {
   // Dev-only labelled fixture (`?fixture=1` is refused in production builds).
-  await page.goto("/lab?fixture=1", { waitUntil: "networkidle" });
+  await page.goto(`${PM}/lab?fixture=1`, { waitUntil: "networkidle" });
   await expect(page.getByText("Fixture · local development data, not real results")).toBeVisible();
   const se = page.getByTestId("signal-engine");
   await expect(se).toBeVisible({ timeout: 15000 });

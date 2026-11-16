@@ -13,6 +13,16 @@ import { defineConfig, devices } from "@playwright/test";
  */
 const BASE_URL = process.env.PW_BASE_URL ?? "http://localhost:3000";
 
+/**
+ * The private /phase1 dashboard specs (`e2e/phase1-*.spec.ts`) need no backend: they run against the
+ * in-memory store with a cookie session (PHASE1_TEST_MODE=1; refused on production Vercel). They run in
+ * their own `phase1` project. With PW_WEB_SERVER=1 the server below gets those variables; add
+ * PW_START=1 to use `next start` (after `npm run build`) instead of `next dev`.
+ */
+const PHASE1_ENV =
+  "PHASE1_TEST_MODE=1 PHASE1_TEST_USER=test@example.com PHASE1_ALLOWED_EMAILS=test@example.com";
+const PORT = new URL(BASE_URL).port || "3000";
+
 export default defineConfig({
   testDir: "./e2e",
   timeout: 60_000,
@@ -30,12 +40,20 @@ export default defineConfig({
   projects: [
     {
       name: "chromium",
+      testIgnore: /phase1-.*\.spec\.ts/,
+      use: { ...devices["Desktop Chrome"] },
+    },
+    {
+      name: "phase1",
+      testMatch: /phase1-.*\.spec\.ts/,
       use: { ...devices["Desktop Chrome"] },
     },
   ],
   webServer: process.env.PW_WEB_SERVER
     ? {
-        command: "NEXT_PUBLIC_API_BASE=http://localhost:8000 npm run dev",
+        command: `${PHASE1_ENV} NEXT_PUBLIC_API_BASE=http://localhost:8000 ${
+          process.env.PW_START ? `npm run start -- -p ${PORT}` : `npm run dev -- -p ${PORT}`
+        }`,
         url: BASE_URL,
         reuseExistingServer: true,
         timeout: 120_000,

@@ -2,11 +2,12 @@
 // Same conventions as lib/lab/api.ts: HttpOnly session cookie (`credentials: "include"`), JSON
 // bodies, 401 -> sign-in with ?next=, 404 -> the page renders the standard not-found UI.
 
+import { pm } from "../paths";
 import { API_BASE } from "../api";
 import { announceLocked, lockedDetail } from "../stepup-events";
 
-export const MEMBERS_PATH = "/lab/members";
-export const MEMBERS_SIGNIN_REDIRECT = `/signin?next=${MEMBERS_PATH}`;
+export const MEMBERS_PATH = pm("/lab/members");
+export const MEMBERS_SIGNIN_REDIRECT = pm(`/signin?next=${MEMBERS_PATH}`);
 export const ADMIN_BASE = "/api/lab/admin";
 
 export interface MemberData {

@@ -1,6 +1,9 @@
 import { type APIRequestContext, type Page, expect } from "@playwright/test";
 
 /** Backend base URL the dev frontend proxies to (same default as playwright.config webServer). */
+/** Arepo lives under this prefix; `/` is the agency page. */
+export const PM = "/predictionmarket";
+
 export const API_BASE = process.env.NEXT_PUBLIC_API_BASE ?? "http://localhost:8000";
 
 /**

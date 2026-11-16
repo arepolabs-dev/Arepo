@@ -1,4 +1,5 @@
 import { test, expect } from "@playwright/test";
+import { PM } from "./helpers";
 
 const cards = [
   {
@@ -43,7 +44,7 @@ test.beforeEach(async ({ page }) => {
 test("Explore exposes only one search, shared category, time and signal sort controls", async ({
   page,
 }) => {
-  await page.goto("/markets", { waitUntil: "networkidle" });
+  await page.goto(`${PM}/markets`, { waitUntil: "networkidle" });
   const controls = page.getByTestId("explore-controls");
   await expect(page.getByLabel("Search markets")).toHaveCount(1);
   await expect(controls.getByTestId("category-filter")).toBeVisible();
@@ -60,7 +61,7 @@ test("Explore exposes only one search, shared category, time and signal sort con
 });
 
 test("Explore filter state survives URL navigation and refresh", async ({ page }) => {
-  await page.goto("/markets", { waitUntil: "networkidle" });
+  await page.goto(`${PM}/markets`, { waitUntil: "networkidle" });
   await page.getByLabel("Search markets").fill("Alpha");
   await expect(page).toHaveURL(/q=Alpha/, { timeout: 5000 });
   await page.getByTestId("category-crypto").click();

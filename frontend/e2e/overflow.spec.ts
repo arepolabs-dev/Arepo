@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { VIEWPORTS, auditOverflow, expectNoHorizontalOverflow } from "./helpers";
+import { PM, VIEWPORTS, auditOverflow, expectNoHorizontalOverflow } from "./helpers";
 
 /**
  * Horizontal-overflow acceptance (final runtime acceptance §2, §3). For every required route and
@@ -10,13 +10,13 @@ import { VIEWPORTS, auditOverflow, expectNoHorizontalOverflow } from "./helpers"
  * Playwright captures a screenshot (configured in playwright.config.ts).
  */
 const ROUTES = [
-  "/",
-  "/signals",
-  "/markets",
-  "/markets/2694364",
-  "/markets/2822017",
-  "/replay",
-  "/replay?replay=prospective",
+  PM,
+  `${PM}/signals`,
+  `${PM}/markets`,
+  `${PM}/markets/2694364`,
+  `${PM}/markets/2822017`,
+  `${PM}/replay`,
+  `${PM}/replay?replay=prospective`,
 ];
 
 for (const route of ROUTES) {
@@ -47,7 +47,7 @@ test("instrumentation reports offenders when overflow exists (self-check of the 
   // audit works from getBoundingClientRect, which reflects real layout geometry regardless of any
   // overflow:clip guard, so this stays a genuine capability check.
   await page.setViewportSize({ width: 574, height: 900 });
-  await page.goto("/signals", { waitUntil: "networkidle" });
+  await page.goto(`${PM}/signals`, { waitUntil: "networkidle" });
   await page.evaluate(() => {
     const d = document.createElement("div");
     d.style.cssText = "position:relative;width:2000px;height:10px";

@@ -1,5 +1,6 @@
 "use client";
 
+import { PM } from "@/lib/paths";
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { SkeletonBlock } from "@/components/Skeletons";
@@ -35,7 +36,7 @@ import {
 import { LabTabs } from "./LabTabs";
 import { LabNotFound, LabSection, Pill, Quiet } from "./primitives";
 
-const SIGNIN = "/signin?next=/lab/security";
+const SIGNIN = `${PM}/signin?next=${PM}/lab/security`;
 const ADD_HELP: Record<KeyMethod, { name: string; help: string }> = {
   device: { name: "MacBook Touch ID", help: "Touch ID or Face ID on the device you're using now." },
   phone: { name: "iPhone", help: "Scan the QR code with your phone's camera. Bluetooth on." },

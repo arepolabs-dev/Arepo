@@ -1,4 +1,5 @@
 import { test, expect, type Page } from "@playwright/test";
+import { PM } from "./helpers";
 
 /**
  * Auth-page footer acceptance (final-completion prompt D2). The sticky-footer shell (body is a
@@ -37,7 +38,7 @@ async function footerReachesBottom(page: Page, path: string) {
   }
 }
 
-for (const path of ["/signin", "/signup", "/reset"]) {
+for (const path of [`${PM}/signin`, `${PM}/signup`, `${PM}/reset`]) {
   test(`auth footer reaches the bottom on ${path} (desktop)`, async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 900 });
     await footerReachesBottom(page, path);

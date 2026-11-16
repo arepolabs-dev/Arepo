@@ -1,5 +1,6 @@
 "use client";
 
+import { pm } from "@/lib/paths";
 import Link from "next/link";
 import { useAsync } from "@/lib/use-async";
 import { getMeta } from "@/lib/api";
@@ -21,11 +22,14 @@ export function Footer() {
               Arepo
             </span>
           </span>
-          <Link href="/how-it-works" className="hover:text-arepo-ink">
+          <Link href={pm("/how-it-works")} className="hover:text-arepo-ink">
             How Arepo works
           </Link>
-          <Link href="/methodology" className="hover:text-arepo-ink">
+          <Link href={pm("/methodology")} className="hover:text-arepo-ink">
             Methodology
+          </Link>
+          <Link href="/" className="hover:text-arepo-ink">
+            Arepo Labs
           </Link>
         </div>
         <p className="max-w-reading leading-relaxed">{data?.disclaimer ?? FALLBACK_DISCLAIMER}</p>

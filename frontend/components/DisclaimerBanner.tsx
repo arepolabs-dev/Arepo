@@ -1,3 +1,4 @@
+import { pm } from "@/lib/paths";
 import Link from "next/link";
 import type { ReactNode } from "react";
 
@@ -9,7 +10,7 @@ import type { ReactNode } from "react";
  */
 export function DisclaimerBanner({
   children,
-  learnMoreHref = "/methodology",
+  learnMoreHref = pm("/methodology"),
 }: {
   children?: ReactNode;
   learnMoreHref?: string;
