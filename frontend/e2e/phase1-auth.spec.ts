@@ -2,7 +2,8 @@ import { expect, test } from "@playwright/test";
 import { signInAs } from "./phase1-helpers";
 
 // Runs against `next start` with PHASE1_TEST_MODE=1 PHASE1_TEST_USER=test@example.com
-// PHASE1_ALLOWED_EMAILS=test@example.com. No backend, no Supabase.
+// PHASE1_ALLOWED_EMAILS=test@example.com. No backend, no Supabase. Real passkey sign-in needs the
+// passkey tables, so it is not run here (see the skipped ceremony test below).
 
 test("signed out: /phase1 redirects 307 to the sign-in page", async ({ request }) => {
   const res = await request.get("/phase1", { maxRedirects: 0 });
@@ -21,6 +22,37 @@ test("sign-in page renders and is noindex", async ({ page }) => {
   await page.goto("/phase1/signin");
   await expect(page.getByRole("heading", { name: "Phase 1" })).toBeVisible();
   await expect(page.locator('meta[name="robots"]')).toHaveAttribute("content", /noindex/);
+});
+
+test("sign-in page has no email form or magic link", async ({ page }) => {
+  await page.goto("/phase1/signin");
+  await expect(page.getByLabel("Email")).toHaveCount(0);
+  await expect(page.getByText(/sign-in link/i)).toHaveCount(0);
+  // Test mode swaps the passkey button for the test-user link.
+  await expect(page.getByRole("link", { name: /Sign in as the test user/ })).toBeVisible();
+});
+
+test("the old magic-link callback is gone", async ({ request }) => {
+  const res = await request.get("/phase1/auth/callback?code=x", { maxRedirects: 0 });
+  // Not public any more: signed out, the middleware sends it to the sign-in page.
+  expect(res.status()).toBe(307);
+  expect(new URL(res.headers()["location"]!, "http://x").pathname).toBe("/phase1/signin");
+});
+
+test("the enrol page is public and the passkey API refuses test mode", async ({ page, request }) => {
+  await page.goto("/phase1/enrol?token=abc");
+  await expect(page.getByRole("heading", { name: "Set up your passkey" })).toBeVisible();
+  await expect(page.getByTestId("not-configured")).toBeVisible();
+  const res = await request.post("/phase1/api/auth/passkey/login-options");
+  expect(res.status()).toBe(503);
+});
+
+test.skip("passkey ceremony: invite, enrol, sign out, sign in with the virtual authenticator", async () => {
+  // Skipped: needs a real database (passkeys, invites, challenges tables) and PHASE1_RP_ID / PHASE1_ORIGINS
+  // for the test host, and test mode keeps no passkey store. To run it by hand against a preview:
+  // create an invite with scripts/phase1/invite.ts, open the link in Chromium with a CDP
+  // WebAuthn.addVirtualAuthenticator (ctap2, internal, hasResidentKey, hasUserVerification,
+  // isUserVerified), click "Create passkey", sign out, then "Sign in with passkey".
 });
 
 test("allowlisted user sees the shell with 7 tabs, initials and sign out", async ({ page, context, baseURL }) => {

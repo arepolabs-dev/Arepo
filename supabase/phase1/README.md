@@ -5,8 +5,8 @@ Schema for the private `/phase1` dashboard (arepolabs.com). It lives in its own 
 
 ## Apply
 
-1. Create the Supabase project. Auth settings: magic link on, "Allow new users to sign up" off, then
-   create the 2 users by hand (Authentication > Users > Add user, "Auto confirm").
+1. Create the Supabase project. Sign-in is by passkey (app-side, see `0003_passkeys.sql`), so
+   Supabase Auth settings and Auth users are no longer used.
 2. Run `0001_init.sql` once in the SQL editor, or from a shell:
    `psql "$SUPABASE_DB_URL" -v ON_ERROR_STOP=1 -f supabase/phase1/0001_init.sql`
    The file is idempotent (safe to run twice).
@@ -19,10 +19,8 @@ allowlist check. `prospects.legal_ok` is a generated column; never write it.
 
 Also in this folder, NOT applied yet (review first): `0003_outreach_send.sql` (mailboxes, send-as, enquiries, plan targets) and `seed_0001.sql` (107 prospects, 35 variants, 6 tests, 34 plan targets). Apply 0003 before the seed.
 
-## Auth settings Dayyan must set
+## Sign-in settings Dayyan must set
 
-- Site URL: `https://www.arepolabs.com`
-- Redirect URLs: `https://www.arepolabs.com/phase1/auth/callback` and the preview pattern
-  `https://*-dayyansheikh.vercel.app/phase1/auth/callback` (confirm the team slug), plus
-  `http://localhost:3000/phase1/auth/callback` for local runs.
+Apply `0003_passkeys.sql` (passkeys, invites, challenges; RLS on, no policies). No Supabase Auth redirect
+URLs are needed any more. Then set the passkey env vars and create invites: `frontend/scripts/phase1/README.md`.
 - Vercel env (Preview and Production): see `frontend/.env.example`, "/phase1" block.
