@@ -17,7 +17,7 @@ Every table has row level security on and no policies: the anon key reads nothin
 writes only through `/phase1/api/*` route handlers using `SUPABASE_SERVICE_ROLE_KEY` after the
 allowlist check. `prospects.legal_ok` is a generated column; never write it.
 
-Later migrations: `0002_views.sql` (metrics views, WP6).
+Also in this folder, NOT applied yet (review first): `0003_outreach_send.sql` (mailboxes, send-as, enquiries, plan targets) and `seed_0001.sql` (107 prospects, 35 variants, 6 tests, 34 plan targets). Apply 0003 before the seed.
 
 ## Auth settings Dayyan must set
 
