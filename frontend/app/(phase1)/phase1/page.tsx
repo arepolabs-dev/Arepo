@@ -1,5 +1,5 @@
-import { Placeholder } from "@/components/phase1/Shell";
+import { PlanView } from "@/components/phase1/PlanView";
 
 export default function Page() {
-  return <Placeholder title="Plan" line="This week's plan will appear here." />;
+  return <PlanView />;
 }

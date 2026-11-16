@@ -1,5 +1,5 @@
-import { Placeholder } from "@/components/phase1/Shell";
+import { MetricsView } from "@/components/phase1/MetricsView";
 
 export default function Page() {
-  return <Placeholder title="Metrics" line="The numbers will appear here." />;
+  return <MetricsView />;
 }

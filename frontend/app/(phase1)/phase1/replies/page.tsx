@@ -1,5 +1,5 @@
-import { Placeholder } from "@/components/phase1/Shell";
+import { RepliesView } from "@/components/phase1/RepliesView";
 
 export default function Page() {
-  return <Placeholder title="Replies" line="Replies from your mailboxes will appear here." />;
+  return <RepliesView />;
 }

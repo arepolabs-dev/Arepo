@@ -1,5 +1,5 @@
-import { Placeholder } from "@/components/phase1/Shell";
+import { EmailsView } from "@/components/phase1/EmailsView";
 
 export default function Page() {
-  return <Placeholder title="Emails" line="Email variants, tests and batches will appear here." />;
+  return <EmailsView />;
 }

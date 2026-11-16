@@ -1,5 +1,5 @@
-import { Placeholder } from "@/components/phase1/Shell";
+import { PipelineView } from "@/components/phase1/PipelineView";
 
 export default function Page() {
-  return <Placeholder title="Pipeline" line="The pipeline board will appear here." />;
+  return <PipelineView />;
 }
