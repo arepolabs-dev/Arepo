@@ -60,7 +60,7 @@ describe("agency copy", () => {
       expect(contacts[1]).toEqual({ name: "Jack Burbridge", email: EMAIL_JACK, calendly: JACK_CALENDLY });
       // Jack's link is hidden while empty; a real link must be a Calendly URL.
       if (JACK_CALENDLY) expect(JACK_CALENDLY.startsWith("https://calendly.com/")).toBe(true);
-      expect(page.includes("p.calendly ? (")).toBe(true);
+      expect(page.includes('href={p.calendly || "#contact"}')).toBe(true);
       expect(page.includes('data-testid="calendar-link"')).toBe(true);
       expect(/data-testid="calendar-link"[^>]*rounded-control/s.test(page)).toBe(false);
     });

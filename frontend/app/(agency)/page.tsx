@@ -80,15 +80,15 @@ export default function AgencyPage() {
                       <a href={`mailto:${p.email}`} className="focus-ring w-fit text-arepo-ink underline underline-offset-4 hover:text-arepo-accent">
                         {p.email}
                       </a>
-                      {p.calendly ? (
-                        <a
-                          href={p.calendly}
-                          data-testid="calendar-link"
-                          className="focus-ring w-fit text-arepo-muted underline underline-offset-4 hover:text-arepo-accent"
-                        >
-                          {copy.contact.calendarLabel}
-                        </a>
-                      ) : null}
+                      {/* Both founders show "Book a chat" (Dayyan, 16 Nov 00:13); Jack's points at
+                          Contact until his calendar link is in. */}
+                      <a
+                        href={p.calendly || "#contact"}
+                        data-testid="calendar-link"
+                        className="focus-ring w-fit text-arepo-muted underline underline-offset-4 hover:text-arepo-accent"
+                      >
+                        {copy.contact.calendarLabel}
+                      </a>
                     </p>
                   </Reveal>
                 </li>
@@ -111,9 +111,9 @@ export default function AgencyPage() {
                 as="li"
                 key={item.title}
                 delay={0.1 * i}
-                className="relative flex flex-col overflow-hidden rounded-[28px] bg-white p-7 pt-9 shadow-[0_1px_2px_rgba(16,16,16,0.04),0_12px_32px_rgba(16,16,16,0.08)] ring-1 ring-black/5 sm:p-9 sm:pt-11"
+                className="relative flex flex-col overflow-hidden rounded-[28px] bg-white p-7 pt-14 shadow-[0_1px_2px_rgba(16,16,16,0.04),0_12px_32px_rgba(16,16,16,0.08)] ring-1 ring-black/5 sm:p-9 sm:pt-16"
               >
-                <span aria-hidden className="absolute inset-x-0 top-0 h-2.5 bg-arepo-accent" />
+                <span aria-hidden data-testid="job-bar" className="absolute inset-x-0 top-0 h-7 bg-arepo-accent" />
                 <span className="font-display text-7xl font-bold leading-none tracking-tight text-arepo-accent">0{i + 1}</span>
                 <h3 className="mt-6 font-display text-3xl font-bold leading-[1.05] tracking-tight text-arepo-ink">{item.title}</h3>
                 <p className="mt-4 text-lg font-medium leading-snug text-arepo-ink2">{item.body}</p>
