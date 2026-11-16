@@ -1,6 +1,7 @@
 import { Header } from "@/components/agency/Header";
 import { HeroArt, Portrait, Reveal, ScrollTicker } from "@/components/agency/motion";
 import { CALENDLY, EMAIL_GENERAL, copy } from "@/content/agency/copy";
+import { getPeople } from "@/lib/site/profiles";
 
 /*
  * Agency landing page. Editorial, left-aligned, a 12-column grid on desktop that stacks on a phone.
@@ -13,7 +14,10 @@ const shell = "mx-auto w-full max-w-shell px-5 sm:px-10";
 const label = "font-display text-xs font-medium uppercase tracking-[0.22em] text-arepo-accent";
 const h2 = "font-display text-3xl font-semibold leading-[1.1] tracking-tight text-arepo-ink sm:text-5xl";
 
-export default function AgencyPage() {
+export const revalidate = 60;
+
+export default async function AgencyPage() {
+  const people = await getPeople();
   return (
     <>
       <div id="top" />
@@ -68,7 +72,7 @@ export default function AgencyPage() {
               </Reveal>
             </div>
             <ul className="grid gap-8 sm:grid-cols-2 lg:col-span-8 lg:col-start-5">
-              {copy.who.people.map((p, i) => (
+              {people.map((p, i) => (
                 <li key={p.name} className={i === 1 ? "sm:mt-16" : ""}>
                   <Portrait src={p.photo} alt={p.name} initials={p.initials} />
                   <Reveal delay={0.1} className="mt-5">
@@ -159,8 +163,8 @@ export default function AgencyPage() {
             </Reveal>
             <ol className="mt-12 grid gap-12 sm:grid-cols-3 sm:gap-8">
               {copy.how.steps.map((s, i) => (
-                <Reveal as="li" key={s.title} delay={0.12 * i} className="relative overflow-hidden rounded-[28px] bg-white/[0.06] p-7 pt-9 ring-1 ring-white/10 sm:p-8 sm:pt-10">
-                  <span aria-hidden className="absolute inset-x-0 top-0 h-2 bg-arepo-accent" />
+                <Reveal as="li" key={s.title} delay={0.12 * i} className="relative overflow-hidden rounded-[28px] bg-white/[0.06] p-7 pt-14 ring-1 ring-white/10 sm:p-8 sm:pt-16">
+                  <span aria-hidden className="absolute inset-x-0 top-0 h-7 bg-arepo-accent" />
                   <span className="block font-display text-8xl font-bold leading-none tracking-tight text-arepo-accent sm:text-9xl">
                     {i + 1}
                   </span>
@@ -193,8 +197,8 @@ export default function AgencyPage() {
                 </a>
               </Reveal>
             </div>
-            <Reveal delay={0.2} className="relative overflow-hidden rounded-[28px] bg-white p-7 pt-9 shadow-[0_1px_2px_rgba(16,16,16,0.04),0_12px_32px_rgba(16,16,16,0.08)] ring-1 ring-black/5 sm:p-9 sm:pt-11 lg:col-span-5">
-              <span aria-hidden className="absolute inset-x-0 top-0 h-2.5 bg-arepo-accent" />
+            <Reveal delay={0.2} className="relative overflow-hidden rounded-[28px] bg-white p-7 pt-14 shadow-[0_1px_2px_rgba(16,16,16,0.04),0_12px_32px_rgba(16,16,16,0.08)] ring-1 ring-black/5 sm:p-9 sm:pt-16 lg:col-span-5">
+              <span aria-hidden className="absolute inset-x-0 top-0 h-7 bg-arepo-accent" />
               <p className="font-display text-xs font-medium uppercase tracking-[0.22em] text-arepo-muted">{copy.contact.detailsLabel}</p>
               <a
                 href={`mailto:${EMAIL_GENERAL}`}

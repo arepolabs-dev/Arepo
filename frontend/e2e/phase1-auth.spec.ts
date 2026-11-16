@@ -23,11 +23,11 @@ test("sign-in page renders and is noindex", async ({ page }) => {
   await expect(page.locator('meta[name="robots"]')).toHaveAttribute("content", /noindex/);
 });
 
-test("allowlisted user sees the shell with 6 tabs, initials and sign out", async ({ page, context, baseURL }) => {
+test("allowlisted user sees the shell with 7 tabs, initials and sign out", async ({ page, context, baseURL }) => {
   await signInAs(context, baseURL!);
   await page.goto("/phase1");
   const nav = page.getByRole("navigation", { name: "Phase 1" });
-  for (const t of ["Plan", "Prospects", "Pipeline", "Emails", "Replies", "Metrics"]) {
+  for (const t of ["Plan", "Prospects", "Pipeline", "Emails", "Replies", "Metrics", "Profiles"]) {
     await expect(nav.getByRole("link", { name: t, exact: true })).toBeVisible();
   }
   await expect(nav.getByRole("link", { name: "Plan" })).toHaveAttribute("aria-current", "page");
