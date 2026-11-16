@@ -49,24 +49,11 @@ export function isTestMode(env: NodeJS.ProcessEnv = process.env): boolean {
 
 export const TEST_COOKIE = "phase1-test-user";
 
-export interface SupabaseEnv {
-  url: string;
-  anonKey: string;
-}
-
-/** The public Supabase settings, or null when Phase 1 is not configured. Read at request time. */
-export function supabaseEnv(env: NodeJS.ProcessEnv = process.env): SupabaseEnv | null {
-  const url = env.NEXT_PUBLIC_SUPABASE_URL;
-  const anonKey = env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-  if (!url || !anonKey) return null;
-  return { url, anonKey };
-}
-
 /** Only same-site /phase1 paths are valid post-login targets (no open redirect). */
 export function safePhase1Next(next: string | null | undefined): string {
   if (!next || !next.startsWith("/phase1") || next.startsWith("//") || next.includes("\\")) {
     return "/phase1";
   }
-  if (next.startsWith("/phase1/signin") || next.startsWith("/phase1/auth")) return "/phase1";
+  if (next.startsWith("/phase1/signin") || next.startsWith("/phase1/enrol")) return "/phase1";
   return next;
 }

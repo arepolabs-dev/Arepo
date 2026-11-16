@@ -4,7 +4,7 @@
  * import this from a client component.
  *
  * Interface for the other packages (WP4 to WP6):
- *   - `requireUser()`            session + allowlist check; throws Phase1Error (use `errorResponse`).
+ *   - `requireUser()`            session (signed passkey cookie) + allowlist check; throws Phase1Error (use `errorResponse`).
  *   - `getDb()`                  a `Phase1Db`: typed select/insert/update/upsert/remove on the Phase 1
  *                                tables. Service-role Supabase in real runs, an in-memory store when
  *                                PHASE1_TEST_MODE=1. Always call `requireUser()` first and set
@@ -14,7 +14,6 @@
  */
 import { cache } from "react";
 import { cookies } from "next/headers";
-import { createServerClient } from "@supabase/ssr";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import {
   TEST_COOKIE,
@@ -22,8 +21,8 @@ import {
   initialsFor,
   isAllowed,
   isTestMode,
-  supabaseEnv,
 } from "./allowlist";
+import { SESSION_COOKIE, sessionSecret, verifySessionAnyEmail } from "./session";
 import type { Insert, Phase1User, Row, TableName } from "./types";
 
 // ---------------------------------------------------------------- errors
@@ -224,25 +223,6 @@ function notConfigured(): never {
   throw new Phase1Error(503, "Phase 1 is not configured");
 }
 
-/** Cookie-bound client for the signed-in browser session (anon key). Call per request. */
-export function createSessionClient(): SupabaseClient {
-  const env = supabaseEnv();
-  if (!env) notConfigured();
-  const store = cookies();
-  return createServerClient(env.url, env.anonKey, {
-    cookies: {
-      getAll: () => store.getAll(),
-      setAll: (list) => {
-        try {
-          for (const { name, value, options } of list) store.set(name, value, options);
-        } catch {
-          // Called from a Server Component: the middleware refreshes the cookies instead.
-        }
-      },
-    },
-  }) as unknown as SupabaseClient;
-}
-
 let service: SupabaseClient | null = null;
 
 /** Service-role client. Server only; bypasses RLS, so call it only after `requireUser()`. */
@@ -344,9 +324,10 @@ export const getSession = cache(async (): Promise<Session> => {
   if (isTestMode()) {
     email = cookies().get(TEST_COOKIE)?.value?.trim().toLowerCase() || null;
   } else {
-    if (!supabaseEnv()) return { state: "unconfigured" };
-    const { data } = await createSessionClient().auth.getUser();
-    email = data.user?.email?.toLowerCase() ?? null;
+    const secret = sessionSecret();
+    if (!secret) return { state: "unconfigured" };
+    // Signed cookie from passkey sign-in; the allowlist is re-checked just below on every request.
+    email = await verifySessionAnyEmail(cookies().get(SESSION_COOKIE)?.value, secret);
   }
 
   if (!email) return { state: "signed_out" };

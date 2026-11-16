@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { TEST_COOKIE, isTestMode, supabaseEnv } from "@/lib/phase1/allowlist";
-import { createSessionClient } from "@/lib/phase1/supabase";
+import { TEST_COOKIE } from "@/lib/phase1/allowlist";
+import { SESSION_COOKIE } from "@/lib/phase1/session";
 
 export const dynamic = "force-dynamic";
 
@@ -9,10 +9,7 @@ export async function POST(request: NextRequest) {
   url.pathname = "/phase1/signin";
   url.search = "";
   const res = NextResponse.redirect(url, 303);
-  if (isTestMode()) {
-    res.cookies.delete(TEST_COOKIE);
-  } else if (supabaseEnv()) {
-    await createSessionClient().auth.signOut();
-  }
+  res.cookies.delete(SESSION_COOKIE);
+  res.cookies.delete(TEST_COOKIE);
   return res;
 }

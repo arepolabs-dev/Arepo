@@ -5,7 +5,6 @@ import {
   isTestMode,
   parseAllowlist,
   safePhase1Next,
-  supabaseEnv,
 } from "./allowlist";
 
 const env = (o: Record<string, string>) => o as unknown as NodeJS.ProcessEnv;
@@ -48,13 +47,6 @@ describe("test mode", () => {
 });
 
 describe("helpers", () => {
-  it("supabaseEnv is null unless both are set", () => {
-    expect(supabaseEnv(env({}))).toBeNull();
-    expect(supabaseEnv(env({ NEXT_PUBLIC_SUPABASE_URL: "u" }))).toBeNull();
-    expect(
-      supabaseEnv(env({ NEXT_PUBLIC_SUPABASE_URL: "u", NEXT_PUBLIC_SUPABASE_ANON_KEY: "k" })),
-    ).toEqual({ url: "u", anonKey: "k" });
-  });
   it("initials", () => {
     expect(initialsFor("dayyan.sheikh@x.com")).toBe("DS");
     expect(initialsFor("jack@x.com")).toBe("J");
@@ -65,6 +57,7 @@ describe("helpers", () => {
     expect(safePhase1Next("https://evil.com")).toBe("/phase1");
     expect(safePhase1Next("/predictionmarket")).toBe("/phase1");
     expect(safePhase1Next("/phase1/signin")).toBe("/phase1");
+    expect(safePhase1Next("/phase1/enrol?token=x")).toBe("/phase1");
     expect(safePhase1Next(null)).toBe("/phase1");
   });
 });

@@ -1,16 +1,17 @@
-import { isTestMode, supabaseEnv } from "@/lib/phase1/allowlist";
-import { SigninForm } from "./SigninForm";
+import { isTestMode, safePhase1Next } from "@/lib/phase1/allowlist";
+import { rpConfig } from "@/lib/phase1/passkey";
+import { sessionSecret } from "@/lib/phase1/session";
+import { PasskeyButton } from "./PasskeyButton";
 
 export const dynamic = "force-dynamic";
 
 const ERRORS: Record<string, string> = {
   not_invited: "Not invited. This address is not on the list for Phase 1.",
-  link: "That sign-in link did not work or has expired. Request a new one.",
 };
 
-export default function SigninPage({ searchParams }: { searchParams: { error?: string } }) {
+export default function SigninPage({ searchParams }: { searchParams: { error?: string; next?: string } }) {
   const testMode = isTestMode();
-  const configured = testMode || supabaseEnv() !== null;
+  const configured = testMode || (rpConfig() !== null && sessionSecret() !== null);
   const error = searchParams.error ? ERRORS[searchParams.error] : undefined;
 
   return (
@@ -23,20 +24,20 @@ export default function SigninPage({ searchParams }: { searchParams: { error?: s
         <div className="mt-6 rounded-card border border-arepo-border bg-arepo-surface p-5 shadow-arepo-sm">
           {!configured ? (
             <p data-testid="not-configured" className="text-sm text-arepo-ink2">
-              Phase 1 is not configured. The Supabase settings are missing on this deployment.
+              Phase 1 is not configured. The passkey settings are missing on this deployment.
             </p>
           ) : testMode ? (
             <>
-              <p className="text-sm text-arepo-ink2">Test mode. No email is sent.</p>
+              <p className="text-sm text-arepo-ink2">Test mode. No passkey is used.</p>
               <a
-                href="/phase1/auth/callback?test=1"
+                href="/phase1/api/auth/test-signin"
                 className="mt-4 block w-full rounded-control bg-arepo-ink px-4 py-2.5 text-center text-sm font-medium text-white"
               >
                 Sign in as the test user
               </a>
             </>
           ) : (
-            <SigninForm />
+            <PasskeyButton next={safePhase1Next(searchParams.next)} />
           )}
         </div>
         {error ? (
@@ -44,7 +45,7 @@ export default function SigninPage({ searchParams }: { searchParams: { error?: s
             {error}
           </p>
         ) : null}
-        <p className="mt-6 text-xs text-arepo-muted">Private. Invited addresses only.</p>
+        <p className="mt-6 text-xs text-arepo-muted">Private. Invited people only. Lost your passkey? Ask for a new invite link.</p>
       </div>
     </main>
   );
