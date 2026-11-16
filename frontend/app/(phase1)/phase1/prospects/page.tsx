@@ -1,5 +1,5 @@
-import { Placeholder } from "@/components/phase1/Shell";
+import { ProspectsView } from "@/components/phase1/ProspectsView";
 
 export default function Page() {
-  return <Placeholder title="Prospects" line="Your prospect list will appear here." />;
+  return <ProspectsView />;
 }

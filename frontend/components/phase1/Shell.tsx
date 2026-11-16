@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { Phase1Provider } from "./data";
 
 export const PHASE1_TABS = [
   { href: "/phase1", label: "Plan" },
@@ -75,7 +76,9 @@ export function Shell({
           </div>
         </div>
       </header>
-      <main className="mx-auto w-full max-w-shell flex-1 px-5 py-8 sm:px-8 lg:px-12">{children}</main>
+      <main className="mx-auto w-full max-w-shell flex-1 px-5 py-8 sm:px-8 lg:px-12">
+        <Phase1Provider>{children}</Phase1Provider>
+      </main>
     </>
   );
 }
