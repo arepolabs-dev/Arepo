@@ -76,7 +76,9 @@ const PITCH = MARK_PITCH;
 const CELL = MARK_CELL;
 const STROKE = MARK_STROKE;
 const RED = MARK_RED;
-const INK = "#101010";
+const INK = "#FFFFFF"; // white outlines on a black tile, as in design-assets/brand/AREPO logo (no word).png
+const TILE = "#000000";
+const PAD = (PITCH - CELL) / 2;
 
 export function HeroArt() {
   const ref = useRef<HTMLDivElement>(null);
@@ -112,12 +114,13 @@ export function HeroArt() {
   return (
     <div ref={ref} className="relative mx-auto w-full max-w-[480px]">
       <motion.svg
-        viewBox={`0 0 ${size} ${size}`}
+        viewBox={`${-PAD} ${-PAD} ${size + PAD * 2} ${size + PAD * 2}`}
         className="block h-auto w-full"
         style={reduce ? undefined : { y, rotate, scale }}
         role="img"
         aria-label="The Arepo mark: a 5 by 5 grid with 1 row and 1 column in red."
       >
+        <rect x={-PAD} y={-PAD} width={size + PAD * 2} height={size + PAD * 2} fill={TILE} />
         {cells}
       </motion.svg>
     </div>
