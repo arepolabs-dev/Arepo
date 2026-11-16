@@ -1,4 +1,4 @@
-import { Banner, Header } from "@/components/agency/Header";
+import { Header } from "@/components/agency/Header";
 import { HeroArt, Portrait, Reveal, ScrollTicker } from "@/components/agency/motion";
 import { CALENDLY, EMAIL_GENERAL, copy } from "@/content/agency/copy";
 
@@ -17,7 +17,6 @@ export default function AgencyPage() {
   return (
     <>
       <div id="top" />
-      <Banner />
       <Header />
       <main className="flex-1">
         {/* Hero: 7 columns of words, 5 of the mark. */}
@@ -38,7 +37,7 @@ export default function AgencyPage() {
               <a
                 href={CALENDLY}
                 data-testid="primary-cta"
-                className="focus-ring inline-block rounded-control bg-arepo-accent px-6 py-3.5 text-base font-medium text-arepo-accentFg shadow-arepo-card transition-colors hover:bg-arepo-accentHover active:bg-arepo-accentActive"
+                className="focus-ring inline-block rounded-full bg-arepo-accent px-7 py-3.5 text-base font-medium text-arepo-accentFg shadow-arepo-card transition-colors hover:bg-arepo-accentHover active:bg-arepo-accentActive"
               >
                 {copy.hero.cta}
               </a>
@@ -112,8 +111,9 @@ export default function AgencyPage() {
                 as="li"
                 key={item.title}
                 delay={0.1 * i}
-                className="flex flex-col border-2 border-arepo-ink border-t-[10px] border-t-arepo-accent bg-arepo-bg p-7 sm:p-8"
+                className="relative flex flex-col overflow-hidden rounded-[28px] bg-white p-7 pt-9 shadow-[0_1px_2px_rgba(16,16,16,0.04),0_12px_32px_rgba(16,16,16,0.08)] ring-1 ring-black/5 sm:p-9 sm:pt-11"
               >
+                <span aria-hidden className="absolute inset-x-0 top-0 h-2.5 bg-arepo-accent" />
                 <span className="font-display text-7xl font-bold leading-none tracking-tight text-arepo-accent">0{i + 1}</span>
                 <h3 className="mt-6 font-display text-3xl font-bold leading-[1.05] tracking-tight text-arepo-ink">{item.title}</h3>
                 <p className="mt-4 text-lg font-medium leading-snug text-arepo-ink2">{item.body}</p>
@@ -139,11 +139,11 @@ export default function AgencyPage() {
             <Reveal delay={0.2} className="lg:col-span-5">
               <ul className="flex flex-wrap gap-3">
                 {copy.custom.examples.map((x) => (
-                  <li key={x} className="border-2 border-arepo-ink px-4 py-2 font-display text-sm font-semibold uppercase tracking-[0.12em] text-arepo-ink">
+                  <li key={x} className="rounded-full border-2 border-arepo-ink bg-white px-5 py-2 font-display text-sm font-semibold uppercase tracking-[0.12em] text-arepo-ink">
                     {x}
                   </li>
                 ))}
-                <li className="border-2 border-arepo-accent bg-arepo-accent px-4 py-2 font-display text-sm font-semibold uppercase tracking-[0.12em] text-arepo-accentFg">
+                <li className="rounded-full border-2 border-arepo-accent bg-arepo-accent px-5 py-2 font-display text-sm font-semibold uppercase tracking-[0.12em] text-arepo-accentFg">
                   Your idea
                 </li>
               </ul>
@@ -159,7 +159,8 @@ export default function AgencyPage() {
             </Reveal>
             <ol className="mt-12 grid gap-12 sm:grid-cols-3 sm:gap-8">
               {copy.how.steps.map((s, i) => (
-                <Reveal as="li" key={s.title} delay={0.12 * i} className="border-t-[6px] border-arepo-accent pt-6">
+                <Reveal as="li" key={s.title} delay={0.12 * i} className="relative overflow-hidden rounded-[28px] bg-white/[0.06] p-7 pt-9 ring-1 ring-white/10 sm:p-8 sm:pt-10">
+                  <span aria-hidden className="absolute inset-x-0 top-0 h-2 bg-arepo-accent" />
                   <span className="block font-display text-8xl font-bold leading-none tracking-tight text-arepo-accent sm:text-9xl">
                     {i + 1}
                   </span>
@@ -192,7 +193,8 @@ export default function AgencyPage() {
                 </a>
               </Reveal>
             </div>
-            <Reveal delay={0.2} className="border-2 border-arepo-ink border-t-[10px] border-t-arepo-accent p-7 lg:col-span-5">
+            <Reveal delay={0.2} className="relative overflow-hidden rounded-[28px] bg-white p-7 pt-9 shadow-[0_1px_2px_rgba(16,16,16,0.04),0_12px_32px_rgba(16,16,16,0.08)] ring-1 ring-black/5 sm:p-9 sm:pt-11 lg:col-span-5">
+              <span aria-hidden className="absolute inset-x-0 top-0 h-2.5 bg-arepo-accent" />
               <p className="font-display text-xs font-medium uppercase tracking-[0.22em] text-arepo-muted">{copy.contact.detailsLabel}</p>
               <a
                 href={`mailto:${EMAIL_GENERAL}`}

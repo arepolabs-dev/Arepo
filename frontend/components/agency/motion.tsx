@@ -6,7 +6,7 @@
  * visitor prefers reduced motion: content renders in its final state.
  */
 import { useRef, useState, type ReactNode } from "react";
-import { MARK_CELL, MARK_GRID, MARK_PITCH, MARK_RED, MARK_SIZE, MARK_STROKE, isRedCell } from "@/components/Logo";
+import { MARK_CELL, MARK_GRID, MARK_OUTLINE, MARK_PITCH, MARK_RADIUS, MARK_RED, MARK_SIZE, MARK_STROKE, isRedCell } from "@/components/Logo";
 import { motion, useReducedMotion, useScroll, useTransform } from "motion/react";
 
 /** Fades and rises into place the first time it scrolls into view. */
@@ -76,9 +76,7 @@ const PITCH = MARK_PITCH;
 const CELL = MARK_CELL;
 const STROKE = MARK_STROKE;
 const RED = MARK_RED;
-const INK = "#FFFFFF"; // white outlines on a black tile, as in design-assets/brand/AREPO logo (no word).png
-const TILE = "#000000";
-const PAD = (PITCH - CELL) / 2;
+const OUTLINE = MARK_OUTLINE.light; // the approved light mark: warm-grey outlines on the off-white page
 
 export function HeroArt() {
   const ref = useRef<HTMLDivElement>(null);
@@ -100,7 +98,8 @@ export function HeroArt() {
           width={CELL - inset * 2}
           height={CELL - inset * 2}
           fill={red ? RED : "none"}
-          stroke={red ? "none" : INK}
+          rx={red ? MARK_RADIUS : MARK_RADIUS - STROKE / 2}
+          stroke={red ? "none" : OUTLINE}
           strokeWidth={red ? 0 : STROKE}
           initial={reduce ? false : { opacity: 0, scale: 0.6 }}
           animate={{ opacity: 1, scale: 1 }}
@@ -114,13 +113,12 @@ export function HeroArt() {
   return (
     <div ref={ref} className="relative mx-auto w-full max-w-[480px]">
       <motion.svg
-        viewBox={`${-PAD} ${-PAD} ${size + PAD * 2} ${size + PAD * 2}`}
+        viewBox={`0 0 ${size} ${size}`}
         className="block h-auto w-full"
         style={reduce ? undefined : { y, rotate, scale }}
         role="img"
         aria-label="The Arepo mark: a 5 by 5 grid with 1 row and 1 column in red."
       >
-        <rect x={-PAD} y={-PAD} width={size + PAD * 2} height={size + PAD * 2} fill={TILE} />
         {cells}
       </motion.svg>
     </div>
@@ -136,7 +134,7 @@ export function Portrait({ src, alt, initials }: { src: string; alt: string; ini
   const reduce = useReducedMotion();
   return (
     <motion.div
-      className="relative aspect-[4/5] w-full overflow-hidden rounded-card bg-arepo-surface2"
+      className="relative aspect-[4/5] w-full overflow-hidden rounded-[28px] bg-arepo-surface2"
       initial={reduce ? false : { clipPath: "inset(0 0 100% 0)" }}
       whileInView={{ clipPath: "inset(0 0 0% 0)" }}
       viewport={{ once: true, margin: "0px 0px -15% 0px" }}

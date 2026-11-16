@@ -26,12 +26,7 @@ export const copy = {
     description:
       "Practical automation for local businesses. 2 engineers based in West London, working across the UK, who take the repetitive admin off your plate.",
   },
-  /** The slim strip above the nav. Plain text and an in-page link: not a 2nd booking button. */
-  banner: {
-    text: "Now booking free automation chats across the UK.",
-    linkLabel: "Get in touch",
-    href: "#contact",
-  },
+  // No black strip above the nav (Dayyan, 16 Nov 00:06): the red top bar is the only bar.
   nav: {
     brand: "Arepo Labs",
     links: [
@@ -60,7 +55,8 @@ export const copy = {
         name: "Dayyan Sheikh",
         role: "Co-founder, AI automation engineer and technical account manager",
         bio: "Master of Engineering, UCL",
-        proof: "Day job as a technical account manager: explaining tech plainly to non-technical clients and fixing real customers' problems.",
+        // Dayyan, 16 Nov 00:06: more personal, not the same as Jack's: UCL contract work, consulting, local businesses.
+        proof: "Did contract work for UCL, building automations and advising teams on how to use them, alongside consulting on the side. Now he builds the same kind of tools for local businesses, and likes nothing more than turning a 2-hour chore into a 2-minute one.",
         initials: "DS",
         photo: "/team/dayyan.jpg",
         email: EMAIL,
@@ -70,7 +66,7 @@ export const copy = {
         name: "Jack Burbridge",
         role: "Co-founder, AI automation engineer and technical account manager",
         bio: "Bachelor of Engineering, Exeter",
-        proof: "Day job as a technical account manager: used to solving real customers' problems and keeping the explanations plain.",
+        proof: "An engineer by training who spends his days with clients, working out what is really slowing them down. Keen on AI and on building things that last, he makes sure every tool fits the way your business already works.",
         initials: "JB",
         photo: "/team/jack.jpg",
         email: EMAIL_JACK,

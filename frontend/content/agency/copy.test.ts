@@ -40,9 +40,9 @@ describe("agency copy", () => {
       expect(page.match(/data-testid="primary-cta"/g)).toHaveLength(1);
       expect(/data-testid="primary-cta"[^>]*bg-arepo-accent/s.test(page)).toBe(true);
     });
-    it("banner and nav carry no booking button", () => {
-      expect("cta" in copy.banner).toBe(false);
-      expect(copy.banner.href).toBe("#contact");
+    it("no black banner above the nav, and the nav carries no booking button (Dayyan, 16 Nov)", () => {
+      expect("banner" in copy).toBe(false);
+      expect(page.includes("<Banner")).toBe(false);
       expect(header.includes("CALENDLY")).toBe(false);
       expect(header.includes("calendly")).toBe(false);
     });
@@ -134,14 +134,12 @@ describe("agency copy", () => {
     expect(all.includes("working across the UK")).toBe(true);
     expect(/(?<!based in )west london/.test(all.replace(/West London/g, "west london").replace(/based in west london/gi, "based in West London").toLowerCase())).toBe(false);
   });
-  it("the banner is 1 short line and names the company's brand", () => {
-    expect(copy.banner.text.split(/\s+/).length).toBeLessThan(12);
+  it("names the company's brand", () => {
     expect(copy.nav.brand).toBe("Arepo Labs");
     for (const e of [EMAIL, EMAIL_JACK, EMAIL_GENERAL]) expect(e.endsWith("@arepolabs.com")).toBe(true);
   });
   it("stays short: under 400 words of reading on the page", () => {
     const prose = [
-      copy.banner.text,
       copy.hero.eyebrow,
       copy.hero.h1,
       copy.hero.sub,
