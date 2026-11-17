@@ -4,6 +4,7 @@
  * alias; replies reach the personal Gmail by Cloudflare forwarding. Refresh tokens last 7 days while the Google
  * app is in Testing mode, so invalid_grant means "Reconnect Gmail", never a crash.
  */
+import { bodyToHtml } from "./html-email";
 import { randomUUID } from "node:crypto";
 import { tokenKey } from "./crypto";
 
@@ -144,9 +145,12 @@ export interface MimeInput {
   references?: string;
 }
 
-/** Plain-text MIME message; returns the raw text and the RFC Message-ID we set (stored for reply matching). */
+const b64 = (s: string) => (Buffer.from(s, "utf8").toString("base64").match(/.{1,76}/g) ?? []).join("\r\n");
+
+/** multipart/alternative MIME message: the plain text exactly as written, plus an HTML twin (see html-email.ts); returns the raw text and the RFC Message-ID we set (stored for reply matching). */
 export function buildMime(m: MimeInput): { raw: string; messageId: string } {
   const messageId = m.messageId ?? `<${randomUUID()}@arepolabs.com>`;
+  const boundary = `tenet_${randomUUID().replace(/-/g, "")}`;
   const name = m.fromName ? `${encodeHeader(m.fromName)} ` : "";
   const lines = [
     `From: ${name}<${m.fromAddress}>`,
@@ -157,10 +161,20 @@ export function buildMime(m: MimeInput): { raw: string; messageId: string } {
     "MIME-Version: 1.0",
     ...(m.inReplyTo ? [`In-Reply-To: ${m.inReplyTo}`] : []),
     ...(m.references ? [`References: ${m.references}`] : []),
+    `Content-Type: multipart/alternative; boundary="${boundary}"`,
+    "",
+    `--${boundary}`,
     'Content-Type: text/plain; charset="UTF-8"',
     "Content-Transfer-Encoding: base64",
     "",
-    (Buffer.from(m.body.replace(/\r?\n/g, "\r\n"), "utf8").toString("base64").match(/.{1,76}/g) ?? []).join("\r\n"),
+    b64(m.body.replace(/\r?\n/g, "\r\n")),
+    `--${boundary}`,
+    'Content-Type: text/html; charset="UTF-8"',
+    "Content-Transfer-Encoding: base64",
+    "",
+    b64(bodyToHtml(m.body)),
+    `--${boundary}--`,
+    "",
   ];
   return { raw: lines.join("\r\n"), messageId };
 }
