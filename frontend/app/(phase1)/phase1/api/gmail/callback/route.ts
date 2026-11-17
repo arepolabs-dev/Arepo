@@ -11,7 +11,7 @@ export async function GET(request: Request) {
   try {
     const user = await requireUser();
     const url = new URL(request.url);
-    const back = (note: string) => NextResponse.redirect(new URL(`/phase1/prospects?gmail=${note}`, url.origin), 303);
+    const back = (note: string) => NextResponse.redirect(new URL(`/phase1?gmail=${note}`, url.origin), 303);
     const cfg = gmailConfig();
     if (!cfg) return back("not_configured");
     const code = url.searchParams.get("code");

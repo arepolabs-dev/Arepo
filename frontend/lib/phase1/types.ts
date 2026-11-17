@@ -279,6 +279,8 @@ export type MessageStep = "first" | "followup1" | "followup2";
 export interface ProgrammeMessage {
   id: Uuid; prospect_ext_id: string; step: MessageStep; subject: string | null; body: string | null; send_on: string | null;
   template: boolean; status: "pending" | "sent" | "skipped"; outreach_email_id: Uuid | null; sent_at: Iso | null; created_at: Iso;
+  /** Whose voice the copy is written in (a sender key, e.g. "dayyan"); null means the track's sender. */
+  sender?: string | null;
 }
 export interface ReplyPlaybook {
   id: Uuid; category: string; track_key: string; detect_cues: string[] | null; reply_subject: string | null;

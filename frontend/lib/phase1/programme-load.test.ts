@@ -29,6 +29,18 @@ describe("loadProgramme", () => {
     expect(s2.status).toBe("planned");
   });
 
+  it("keeps a second voice for the same prospect and step as its own row", async () => {
+    const db = getDb();
+    await loadProgramme(db, fixture);
+    const r = await loadProgramme(db, { messages: [{ prospect_ext_id: "P1", step: "first", subject: "Hi from Jack", body: "Jack here", send_on: "2026-11-19", sender: "Jack" }] });
+    expect(r.messages).toMatchObject({ added: 1 });
+    const rows = await db.select("programme_messages", { eq: { prospect_ext_id: "P1", step: "first" } });
+    expect(rows).toHaveLength(2);
+    expect(rows.find((m) => m.sender === "jack")?.subject).toBe("Hi from Jack");
+    expect(rows.find((m) => !m.sender)).toBeTruthy();
+    expect((await loadProgramme(db, { messages: [{ prospect_ext_id: "P1", step: "first", subject: "Hi again", body: "Jack here", send_on: "2026-11-19", sender: "jack" }] })).messages).toMatchObject({ added: 0, updated: 1 });
+  });
+
   it("is idempotent and never resets a sent or replied status", async () => {
     const db = getDb();
     await loadProgramme(db, fixture);

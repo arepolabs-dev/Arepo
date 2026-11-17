@@ -55,14 +55,14 @@ test.skip("passkey ceremony: invite, enrol, sign out, sign in with the virtual a
   // isUserVerified), click "Create passkey", sign out, then "Sign in with passkey".
 });
 
-test("allowlisted user sees the shell with 7 tabs, initials and sign out", async ({ page, context, baseURL }) => {
+test("allowlisted user sees the shell with 3 tabs, initials and sign out", async ({ page, context, baseURL }) => {
   await signInAs(context, baseURL!);
   await page.goto("/phase1");
   const nav = page.getByRole("navigation", { name: "Phase 1" });
-  for (const t of ["Plan", "Prospects", "Pipeline", "Emails", "Replies", "Metrics", "Profiles"]) {
+  for (const t of ["Phases", "Replies", "Prospects"]) {
     await expect(nav.getByRole("link", { name: t, exact: true })).toBeVisible();
   }
-  await expect(nav.getByRole("link", { name: "Plan" })).toHaveAttribute("aria-current", "page");
+  await expect(nav.getByRole("link", { name: "Phases" })).toHaveAttribute("aria-current", "page");
   await expect(page.getByTestId("phase1-initials")).toHaveText("T");
   await nav.getByRole("link", { name: "Prospects" }).click();
   await expect(page).toHaveURL(/\/phase1\/prospects$/);

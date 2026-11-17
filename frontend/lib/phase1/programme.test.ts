@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
-  classifyAgainstPlaybook, computePhaseResult, fillReply, normDomain, normEmail, prospectFacts, selectBatch, tally, tracksForUser,
+  classifyAgainstPlaybook, computePhaseResult, fillReply, messageVoice, normDomain, normEmail, prospectFacts, selectBatch, senderKey, senderKeys, sentBy, tally,
 } from "./programme";
 import type { Phase, ProgrammeMessage, ProgrammeProspect, ReplyPlaybook, Track } from "./types";
 
@@ -79,9 +79,37 @@ describe("selectBatch", () => {
     expect(out[0]!.body).toContain("Hi Sam re your launch");
     expect(out[0]!.unresolved).toContain("{{missing}}");
   });
-  it("tracksForUser matches the track's sender", () => {
-    const tracks = [{ key: "startups", sender: "Dayyan" }, { key: "local", sender: "Jack" }] as Track[];
-    expect(tracksForUser(tracks, { email: "dayyan.sheikh@arepolabs.com", name: "Dayyan Sheikh" })).toEqual(["startups"]);
+});
+
+describe("sender voices", () => {
+  const tracks = [{ key: "startups", sender: "Dayyan" }, { key: "local", sender: "Jack" }] as Track[];
+  const run = (prospects: ProgrammeProspect[], messages: ProgrammeMessage[], sender: string) =>
+    selectBatch({ messages, prospects, phases: [phase(), phase({ phase_id: "L1", track_key: "local" })], core: prospects.map((p) => core(p.ext_id)), now: NOW, sender, tracks });
+
+  it("senderKey is the lower-cased first name, from a name or an email", () => {
+    expect(senderKey("Dayyan Sheikh")).toBe("dayyan");
+    expect(senderKey("jack.smith@arepolabs.com")).toBe("jack");
+    expect(senderKey(null)).toBe("");
+  });
+  it("a message with no sender is in the track sender's voice", () => {
+    expect(messageVoice({ sender: null }, pp("a"), tracks)).toBe("dayyan");
+    expect(messageVoice({ sender: "Jack" }, pp("a"), tracks)).toBe("jack");
+    expect(senderKeys(tracks, [{ sender: "jack" }, { sender: "Sam" }])).toEqual(["dayyan", "jack", "sam"]);
+  });
+  it("each tab only gets copy in its own voice", () => {
+    const ps = [pp("a"), pp("b", { track_key: "local", phase_id: "L1" })];
+    const messages = [msg("a", "first", "2026-11-18"), msg("b", "first", "2026-11-18"), msg("b", "first", "2026-11-18", { id: "b-first-dayyan", sender: "dayyan" })];
+    expect(run(ps, messages, "dayyan").map((i) => i.message.id)).toEqual(["a-first", "b-first-dayyan"]);
+    expect(run(ps, messages, "jack").map((i) => i.message.id)).toEqual(["b-first"]);
+    expect(run(ps, messages, "sam")).toHaveLength(0);
+  });
+  it("once one person has sent the first email, the other voice never sends to that prospect", () => {
+    const ps = [pp("a")];
+    const messages = [msg("a", "first", "2026-11-12", { status: "sent" }), msg("a", "first", "2026-11-18", { id: "a-first-jack", sender: "jack" }), msg("a", "followup1", "2026-11-18", { id: "a-f1-jack", sender: "jack" }), msg("a", "followup1", "2026-11-18")];
+    expect(run(ps, messages, "jack")).toHaveLength(0);
+    expect(run(ps, messages, "dayyan").map((i) => i.message.id)).toEqual(["a-followup1"]);
+    expect(sentBy(ps[0]!, messages, tracks)).toBe("dayyan");
+    expect(sentBy(ps[0]!, [msg("a", "first", "2026-11-12")], tracks)).toBeNull();
   });
 });
 

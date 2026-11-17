@@ -6,7 +6,7 @@
 import { ActionError, sentTodayCount } from "./actions";
 import { OPT_OUT, endsWithOptOut } from "./merge";
 import { canUse } from "./mailbox";
-import { aheadInPhase, computePhaseResult, londonToday, prospectFacts, selectBatch, tracksForUser, type BatchItem } from "./programme";
+import { aheadInPhase, computePhaseResult, londonToday, prospectFacts, selectBatch, senderKey, type BatchItem } from "./programme";
 import { DAILY_CAP } from "./send";
 import type { Phase1Db } from "./supabase";
 import type { Phase1User, Row } from "./types";
@@ -28,11 +28,14 @@ export async function nameFor(db: Phase1Db, user: Phase1User): Promise<string> {
   return person?.name || user.email.split("@")[0] || "";
 }
 
-/** The batch the signed-in person sees, built on the server (the browser never decides what is due). */
+/**
+ * The batch the signed-in person may send, built on the server (the browser never decides what is due): every
+ * track, but only copy written in their own voice, so a send always goes out signed by the person whose Gmail it is.
+ */
 export async function batchFor(db: Phase1Db, user: Phase1User, now = new Date()): Promise<BatchItem[]> {
   const r = await loadProgrammeRows(db);
-  const trackKeys = tracksForUser(r.tracks, { email: user.email, name: await nameFor(db, user) });
-  return selectBatch({ messages: r.messages, prospects: r.prospects, phases: r.phases, core: r.core, now, trackKeys });
+  const sender = senderKey(await nameFor(db, user));
+  return selectBatch({ messages: r.messages, prospects: r.prospects, phases: r.phases, core: r.core, now, sender, tracks: r.tracks });
 }
 
 async function pickMailbox(db: Phase1Db, user: Phase1User): Promise<Row<"mailboxes">> {

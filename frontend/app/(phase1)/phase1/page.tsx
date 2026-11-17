@@ -1,5 +1,5 @@
-import { TodayView } from "@/components/phase1/TodayView";
+import { PhasesHome } from "@/components/phase1/PhasesHome";
 
 export default function Page() {
-  return <TodayView />;
+  return <PhasesHome />;
 }

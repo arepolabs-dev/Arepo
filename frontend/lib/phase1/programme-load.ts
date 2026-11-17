@@ -4,7 +4,7 @@
  * a business (unique by ext id, normalised email and domain), and never rewrites a message that was sent.
  * Pure over Phase1Db, so it runs on the in-memory store in tests. Optional keys may be missing.
  */
-import { normDomain, normEmail, slug } from "./programme";
+import { normDomain, normEmail, senderKey, slug } from "./programme";
 import type { Phase1Db } from "./supabase";
 import type { Insert, Row } from "./types";
 
@@ -173,8 +173,10 @@ export async function loadProgramme(db: Phase1Db, json: unknown, opts: LoadOptio
 
   // ---- messages
   const msgs = await db.select("programme_messages");
-  const mkey = (e: string, s: string) => `${e}|${s}`;
-  const mByKey = new Map(msgs.map((m) => [mkey(m.prospect_ext_id, m.step), m]));
+  // One message per prospect, step and voice. `sender` (e.g. "dayyan") marks copy in another person's voice;
+  // a message without one is in the track sender's voice (the rows loaded before migration 0005).
+  const mkey = (e: string, s: string, v: string | null) => `${e}|${s}|${v ?? ""}`;
+  const mByKey = new Map(msgs.map((m) => [mkey(m.prospect_ext_id, m.step, m.sender ? senderKey(m.sender) : null), m]));
   for (const m of list(root.messages)) {
     const ext = str(first(m, "prospect_id", "prospect_ext_id"));
     const step = stepOf(m.step);
@@ -182,11 +184,12 @@ export async function loadProgramme(db: Phase1Db, json: unknown, opts: LoadOptio
       report.messages.skipped++;
       continue;
     }
-    const row = { subject: str(m.subject), body: str(m.body), send_on: str(m.send_on), template: m.template === true };
-    const found = mByKey.get(mkey(ext, step));
+    const sender = str(first(m, "sender", "voice")) ? senderKey(str(first(m, "sender", "voice"))) : null;
+    const row = { subject: str(m.subject), body: str(m.body), send_on: str(m.send_on), template: m.template === true, ...(sender ? { sender } : {}) };
+    const found = mByKey.get(mkey(ext, step, sender));
     if (!found) {
       const [made] = await db.insert("programme_messages", { prospect_ext_id: ext, step, status: "pending", ...row });
-      mByKey.set(mkey(ext, step), made!);
+      mByKey.set(mkey(ext, step, sender), made!);
       report.messages.added++;
     } else if (found.status === "pending") {
       await db.update("programme_messages", { id: found.id }, row);

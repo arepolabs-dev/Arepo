@@ -118,11 +118,33 @@ export interface BatchInput {
   phases: Phase[];
   core: Core[];
   now: Date;
-  /** Track keys the signed-in sender covers; empty or undefined means every track. */
+  /** Track keys to include; empty or undefined means every track. */
   trackKeys?: string[];
+  /** Only messages written in this sender's voice (see `senderKey`); needs `tracks` to resolve a message with no sender. */
+  sender?: string;
+  tracks?: Pick<Track, "key" | "sender">[];
 }
 
 const STEP_ORDER: MessageStep[] = ["first", "followup1", "followup2"];
+
+export interface Rendered { subject: string; body: string; unresolved: string[] }
+
+/** The email as the recipient will read it: a template message gets its merge fields and the previous winner filled. */
+export function renderMessage(m: Pick<ProgrammeMessage, "subject" | "body" | "template">, p: Pick<ProgrammeProspect, "contact_name" | "company" | "hook" | "phase_id">, phases: Phase[]): Rendered {
+  let subject = m.subject ?? "";
+  let body = m.body ?? "";
+  if (m.template) {
+    const phase = p.phase_id ? phases.find((x) => x.phase_id === p.phase_id) : undefined;
+    const w = winnerOf(phase, phases);
+    const ctx: TemplateCtx = {
+      firstName: (p.contact_name ?? "").trim().split(/\s+/)[0] ?? "", company: p.company, hook: p.hook ?? "",
+      winner: w ? { variable: w.phase.variable, text: w.text } : null,
+    };
+    subject = fillTemplate(subject, ctx);
+    body = fillTemplate(body, ctx);
+  }
+  return { subject, body, unresolved: unresolvedIn(`${subject}\n${body}`) };
+}
 
 /**
  * Every first touch and follow-up due today or earlier, for the given tracks. Skips anyone who replied, opted
@@ -136,6 +158,8 @@ export function selectBatch(input: BatchInput): BatchItem[] {
   const msgsOf = new Map<string, ProgrammeMessage[]>();
   for (const m of input.messages) msgsOf.set(m.prospect_ext_id, [...(msgsOf.get(m.prospect_ext_id) ?? []), m]);
   const tracks = new Set((input.trackKeys ?? []).map(slug));
+  const trackList = input.tracks ?? [];
+  const voice = input.sender ? senderKey(input.sender) : "";
   const out: BatchItem[] = [];
 
   for (const m of input.messages) {
@@ -143,6 +167,10 @@ export function selectBatch(input: BatchInput): BatchItem[] {
     const p = byExt.get(m.prospect_ext_id);
     if (!p) continue;
     if (tracks.size && !tracks.has(slug(p.track_key))) continue;
+    if (voice && messageVoice(m, p, trackList) !== voice) continue;
+    const mine = msgsOf.get(m.prospect_ext_id) ?? [];
+    // One voice per prospect: once a first email went out (from anyone), no other voice sends to them.
+    if (m.step === "first" && mine.some((x) => x.step === "first" && x.status === "sent")) continue;
     if (BLOCKED_STATUSES.has(p.status)) continue;
     const core = p.prospect_id ? coreById.get(p.prospect_id) : undefined;
     if (core && BLOCKED_STATUSES.has(core.status)) continue;
@@ -151,31 +179,40 @@ export function selectBatch(input: BatchInput): BatchItem[] {
     if (phase && phase.status === "planned") continue;
     const idx = STEP_ORDER.indexOf(m.step);
     if (idx > 0) {
-      const mine = msgsOf.get(m.prospect_ext_id) ?? [];
-      const before = STEP_ORDER.slice(0, idx).map((s) => mine.find((x) => x.step === s)).filter(Boolean) as ProgrammeMessage[];
+      // A follow-up continues the thread of whoever sent the first email: same voice only.
+      const mv = messageVoice(m, p, trackList);
+      const same = mine.filter((x) => messageVoice(x, p, trackList) === mv);
+      const before = STEP_ORDER.slice(0, idx).map((s) => same.find((x) => x.step === s)).filter(Boolean) as ProgrammeMessage[];
       if (!before.length || before.some((b) => b.status !== "sent" && b.status !== "skipped") || !before.some((b) => b.status === "sent")) continue;
     }
-    let subject = m.subject ?? "";
-    let body = m.body ?? "";
-    if (m.template) {
-      const w = winnerOf(phase ?? undefined, input.phases);
-      const ctx: TemplateCtx = {
-        firstName: (p.contact_name ?? "").trim().split(/\s+/)[0] ?? "", company: p.company, hook: p.hook ?? "",
-        winner: w ? { variable: w.phase.variable, text: w.text } : null,
-      };
-      subject = fillTemplate(subject, ctx);
-      body = fillTemplate(body, ctx);
-    }
-    out.push({ message: m, prospect: p, phase, step: m.step, overdue: m.send_on < today, subject, body, unresolved: unresolvedIn(`${subject}\n${body}`) });
+    const r = renderMessage(m, p, input.phases);
+    out.push({ message: m, prospect: p, phase, step: m.step, overdue: m.send_on < today, subject: r.subject, body: r.body, unresolved: r.unresolved });
   }
   return out.sort((a, b) => Number(b.overdue) - Number(a.overdue) || (a.message.send_on ?? "").localeCompare(b.message.send_on ?? "") || STEP_ORDER.indexOf(a.step) - STEP_ORDER.indexOf(b.step) || a.prospect.company.localeCompare(b.prospect.company));
 }
 
-/** Tracks the signed-in person sends for: matched on the track's sender name or the person's first name. */
-export function tracksForUser(tracks: Track[], user: { email: string; name?: string | null }): string[] {
-  const first = (user.name ?? user.email.split("@")[0] ?? "").split(/[\s._-]+/)[0]?.toLowerCase() ?? "";
-  const mine = tracks.filter((t) => first && (t.sender ?? "").toLowerCase().includes(first)).map((t) => t.key);
-  return mine.length ? mine : tracks.map((t) => t.key);
+/** A sender's key: the lower-cased first name ("Dayyan Sheikh" or "dayyan.sheikh@x" give "dayyan"). */
+export function senderKey(nameOrEmail: string | null | undefined): string {
+  return (nameOrEmail ?? "").split("@")[0]!.trim().split(/[\s._-]+/)[0]?.toLowerCase() ?? "";
+}
+
+/** Whose voice a message is in: its own `sender`, else the sender of the prospect's track. */
+export function messageVoice(m: Pick<ProgrammeMessage, "sender">, p: Pick<ProgrammeProspect, "track_key">, tracks: Pick<Track, "key" | "sender">[]): string {
+  if (m.sender) return senderKey(m.sender);
+  return senderKey(tracks.find((t) => slug(t.key) === slug(p.track_key))?.sender);
+}
+
+/** Every voice the programme has copy or a track sender for, in first-seen order. */
+export function senderKeys(tracks: Pick<Track, "sender">[], messages: Pick<ProgrammeMessage, "sender">[]): string[] {
+  const out: string[] = [];
+  for (const k of [...tracks.map((t) => senderKey(t.sender)), ...messages.map((m) => senderKey(m.sender))]) if (k && !out.includes(k)) out.push(k);
+  return out;
+}
+
+/** Who sent a prospect's first email (a sender key), or null if nobody has yet. */
+export function sentBy(p: Pick<ProgrammeProspect, "ext_id" | "track_key">, messages: ProgrammeMessage[], tracks: Pick<Track, "key" | "sender">[]): string | null {
+  const m = messages.find((x) => x.prospect_ext_id === p.ext_id && x.step === "first" && x.status === "sent");
+  return m ? messageVoice(m, p, tracks) : null;
 }
 
 // ---------------------------------------------------------------- reply classification
