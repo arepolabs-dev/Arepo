@@ -337,6 +337,9 @@ function PhaseCard({ phase, voice, voices, own, sendAs, gmailReason, today, pros
         </div>
       )}
 
+      {show === "preview" && own && (
+        <TestSend messageIds={(keys.length ? keys : [""]).map((k) => { const g = sorted.filter((p) => (k ? p.variant === k : true) && inVoice(p)); const c = g.find((p) => p.ext_id === pick[k]) ?? g[0]; const m = c ? inVoice(c) : null; return m?.id ?? ""; }).filter(Boolean)} />
+      )}
       {show === "preview" && (
         <div className="mt-3 grid gap-3 md:grid-cols-2">
           {(keys.length ? keys : [""]).map((k) => {
@@ -402,5 +405,34 @@ function PhaseCard({ phase, voice, voices, own, sendAs, gmailReason, today, pros
         </div>
       )}
     </article>
+  );
+}
+
+/** Send a test copy of the previewed email (one per version) to an address you type. Nothing is recorded and nothing counts. */
+function TestSend({ messageIds }: { messageIds: string[] }) {
+  const [to, setTo] = useState("");
+  const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
+  const [busy, setBusy] = useState(false);
+  async function go(id: string) {
+    setBusy(true);
+    setMsg(null);
+    try {
+      const res = await fetch("/phase1/api/test-send", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ messageId: id, to }) });
+      const j = await res.json().catch(() => ({}));
+      setMsg(res.ok ? { ok: true, text: `Test sent to ${j.to ?? to}` } : { ok: false, text: j.reconnect ? "Reconnect Gmail" : j.error ?? "Could not send the test" });
+    } catch {
+      setMsg({ ok: false, text: "Network error" });
+    }
+    setBusy(false);
+  }
+  return (
+    <div className="mt-3 flex flex-wrap items-center gap-2 rounded-control border border-arepo-border bg-arepo-surface2 p-3">
+      <input type="email" className={`${inputCls} min-w-[16rem]`} placeholder="Send a test to this address" aria-label="Test email address" value={to} onChange={(e) => setTo(e.target.value)} />
+      {messageIds.map((id, i) => (
+        <button key={id} className={btnCls} disabled={busy || !to.trim()} onClick={() => go(id)}>{messageIds.length > 1 ? `Send test ${String.fromCharCode(65 + i)}` : "Send test"}</button>
+      ))}
+      {msg && <span className={msg.ok ? "text-arepo-pos" : "text-red-700"}>{msg.text}</span>}
+      <span className="w-full text-xs text-arepo-muted">Sends the exact email to this address only. Nothing is recorded.</span>
+    </div>
   );
 }
