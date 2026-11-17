@@ -6,8 +6,16 @@
  * send screen refuses to send until the text has none.
  */
 
-/** The opt-out line from doc 08, exactly as written. Every email ends with it. */
-export const OPT_OUT = `If you'd rather not hear from me, reply "stop" and I won't write again.`;
+/** The fallback opt-out line, appended only when a body has no opt-out at all. Normally it sits above the sign-off. */
+export const OPT_OUT = `If you'd rather not hear from me, reply to this email and let me know.`;
+
+/** The older wording, still accepted so earlier drafts are not changed or skipped. */
+export const OLD_OPT_OUT = `If you'd rather not hear from me, reply "stop" and I won't write again.`;
+
+/** True when the text has an opt-out line anywhere (new or old wording, or an unsubscribe line). */
+export function hasOptOut(text: string): boolean {
+  return /rather not hear from me/i.test(text) || /reply\s+["“'‘]?\s*stop/i.test(text) || /unsubscribe/i.test(text);
+}
 
 export interface Sender {
   /** Full name, e.g. "Dayyan Sheikh". */
@@ -91,7 +99,7 @@ export function findUnresolved(text: string): string[] {
 }
 
 export function endsWithOptOut(text: string): boolean {
-  return text.trimEnd().endsWith(OPT_OUT);
+  return hasOptOut(text);
 }
 
 function lastNonEmptyIndex(lines: string[]): number {
@@ -114,7 +122,7 @@ function finishBody(body: string, signature: string | null | undefined, s: Sende
     if (hasSignoff) lines[last] = s.firstName;
     out = lines.join("\n");
   }
-  if (!endsWithOptOut(out)) out = out.replace(/\s+$/, "") + "\n\n" + OPT_OUT;
+  if (!hasOptOut(out)) out = out.replace(/\s+$/, "") + "\n\n" + OPT_OUT;
   return fillBrackets(out, s);
 }
 

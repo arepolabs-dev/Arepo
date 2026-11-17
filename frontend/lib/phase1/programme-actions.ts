@@ -4,7 +4,7 @@
  * the owner comes from the session. Nothing here sends mail: sending stays in /phase1/api/gmail/send.
  */
 import { ActionError, sentTodayCount } from "./actions";
-import { OPT_OUT, endsWithOptOut } from "./merge";
+import { OPT_OUT, hasOptOut } from "./merge";
 import { canUse } from "./mailbox";
 import { aheadInPhase, computePhaseResult, londonToday, prospectFacts, selectBatch, senderKey, type BatchItem } from "./programme";
 import { DAILY_CAP } from "./send";
@@ -13,7 +13,6 @@ import type { Phase1User, Row } from "./types";
 
 export const PROGRAMME_GAP_SECONDS = { min: 20, max: 45 };
 
-const hasOptOut = (body: string) => endsWithOptOut(body) || /reply\s+["“'‘]?\s*stop/i.test(body) || /unsubscribe/i.test(body);
 
 export async function loadProgrammeRows(db: Phase1Db) {
   const [tracks, phases, prospects, messages, core, replies, events, playbook] = await Promise.all([

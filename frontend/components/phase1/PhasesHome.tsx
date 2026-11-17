@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
-  BLOCKED_STATUSES, CALL_STATUSES, computePhaseResult, londonToday, messageVoice, prospectFacts, renderMessage, selectBatch, senderKey, senderKeys, sentBy, variantKeys, variantText,
+  BLOCKED_STATUSES, CALL_STATUSES, computePhaseResult, londonToday, messageVoice, prospectFacts, renderMessage, selectBatch, senderKey, sentBy, slug, variantKeys, variantText,
   type BatchItem, type PhaseResult,
 } from "@/lib/phase1/programme";
 import { randomGapSeconds } from "@/lib/phase1/send";
@@ -36,8 +36,9 @@ const GMAIL_NOTE: Record<string, string> = {
 };
 
 /**
- * The one page: a tab per sender (Dayyan, Jack), the same phases on each, and on every phase card Preview email,
- * Recipients and Send. Send only works on your own tab, from your own connected Gmail, with copy in your voice.
+ * The one page: a tab per person (Dayyan = startups, Jack = local trades), each showing only its own track, and on
+ * every phase card Preview email, Recipients and Send. Send only works on your own tab, from your own connected
+ * Gmail, with copy in your voice.
  */
 export function PhasesHome() {
   const { state, act, reload } = usePhase1();
@@ -54,9 +55,9 @@ export function PhasesHome() {
   const me = senderKey(state?.me.name ?? state?.me.email);
   const voices = useMemo<Voice[]>(() => {
     if (!state || !prog) return [];
-    const keys = senderKeys(prog.tracks, prog.messages);
-    for (const p of state.people) {
-      const k = senderKey(p.name ?? p.email);
+    const keys: string[] = [];
+    for (const t of prog.tracks) {
+      const k = senderKey(t.sender);
       if (k && !keys.includes(k)) keys.push(k);
     }
     const label = (k: string) => {
@@ -69,28 +70,40 @@ export function PhasesHome() {
   const current = tab ?? (voices.some((v) => v.key === me) ? me : voices[0]?.key ?? "");
   const own = current === me;
 
+  // Each tab shows only its own track(s): the tracks whose sender is this person.
+  const myTracks = useMemo(() => (prog ? prog.tracks.filter((t) => senderKey(t.sender) === current) : []), [prog, current]);
+  const trackKeys = useMemo(() => myTracks.map((t) => t.key), [myTracks]);
+  const inTrack = (p: Pick<ProgrammeProspect, "track_key">) => trackKeys.some((k) => slug(k) === slug(p.track_key));
+
   const batch = useMemo<BatchItem[]>(() => {
     if (!state || !prog || !current) return [];
-    return selectBatch({ messages: prog.messages, prospects: prog.prospects, phases: prog.phases, core: state.prospects, now: new Date(), sender: current, tracks: prog.tracks });
-  }, [state, prog, current]);
+    return selectBatch({ messages: prog.messages, prospects: prog.prospects, phases: prog.phases, core: state.prospects, now: new Date(), sender: current, tracks: prog.tracks, trackKeys });
+  }, [state, prog, current, trackKeys]);
 
   if (!state || !prog) return <Loading />;
   const facts = prospectFacts(prog.prospects, prog.messages, state.prospects, state.replies, state.events);
   const now = new Date();
   const today = londonToday(now);
   const voiceLabel = voices.find((v) => v.key === current)?.label ?? cap(current);
-  const mailbox = state.mailboxes.find((m) => m.kind === "personal" && m.owner_id === state.me.personId && m.status === "connected" && m.send_as_verified && m.send_as) ?? null;
-  const waiting = state.replies.filter(needsAnswer).sort((a, b) => b.received_at.localeCompare(a.received_at));
+  const myBox = state.mailboxes.find((m) => m.kind === "personal" && m.owner_id === state.me.personId) ?? null;
+  const mailbox = myBox && myBox.status === "connected" && myBox.send_as_verified && myBox.send_as ? myBox : null;
+  /** Why Send cannot be used yet, in plain words (null when Gmail is ready). */
+  const gmailReason: string | null = mailbox ? null :
+    !state.gmail.configured ? "Gmail is not set up on this server yet" :
+    !myBox ? "Connect Gmail first" :
+    myBox.status !== "connected" ? "Reconnect Gmail first" :
+    "Gmail connected but the arepolabs address is not verified as Send mail as yet";
+  const trackProspectIds = new Set(prog.prospects.filter(inTrack).map((p) => p.prospect_id).filter(Boolean) as string[]);
+  const anyProgrammeIds = new Set(prog.prospects.map((p) => p.prospect_id).filter(Boolean) as string[]);
+  const waiting = state.replies.filter(needsAnswer).filter((r) => (r.prospect_id && trackProspectIds.has(r.prospect_id)) || (own && !(r.prospect_id && anyProgrammeIds.has(r.prospect_id)))).sort((a, b) => b.received_at.localeCompare(a.received_at));
 
   // "Next send": the earliest day this voice still has pending copy for someone who can be emailed.
   const upcoming = prog.messages.filter((m) => {
     if (m.status !== "pending" || !m.send_on) return false;
     const p = prog.prospects.find((x) => x.ext_id === m.prospect_ext_id);
-    if (!p || BLOCKED_STATUSES.has(p.status) || messageVoice(m, p, prog.tracks) !== current) return false;
+    if (!p || !inTrack(p) || BLOCKED_STATUSES.has(p.status) || messageVoice(m, p, prog.tracks) !== current) return false;
     const ph = prog.phases.find((x) => x.phase_id === p.phase_id);
-    if (ph?.status === "planned") return false;
-    const by = sentBy(p, prog.messages, prog.tracks);
-    return !(by && by !== current);
+    return ph?.status !== "planned";
   });
   const nextDay = upcoming.map((m) => (m.send_on! < today ? today : m.send_on!)).sort()[0] ?? null;
   const nextCount = nextDay ? upcoming.filter((m) => (m.send_on! < today ? today : m.send_on!) === nextDay).length : 0;
@@ -178,7 +191,7 @@ export function PhasesHome() {
         {note && <div className="mt-3"><Banner tone="warn">{note}</Banner></div>}
       </section>
 
-      {prog.tracks.map((t) => {
+      {myTracks.map((t) => {
         const phases = prog.phases.filter((p) => p.track_key === t.key).sort((a, b) => a.ord - b.ord);
         if (!phases.length) return null;
         return (
@@ -186,8 +199,8 @@ export function PhasesHome() {
             <h2 className="font-display text-lg text-arepo-ink">{t.name}</h2>
             <div className="mt-3 space-y-4">
               {phases.map((ph) => (
-                <PhaseCard key={ph.phase_id} phase={ph} track={t} voice={current} voices={voices} own={own} sendAs={mailbox?.send_as ?? null}
-                  prospects={prog.prospects.filter((p) => p.phase_id === ph.phase_id)} messages={prog.messages} tracks={prog.tracks} phases={prog.phases}
+                <PhaseCard key={ph.phase_id} phase={ph} voice={current} voices={voices} own={own} sendAs={mailbox?.send_as ?? null} gmailReason={gmailReason} today={today}
+                  prospects={prog.prospects.filter((p) => p.phase_id === ph.phase_id && inTrack(p))} messages={prog.messages} tracks={prog.tracks} phases={prog.phases}
                   batch={batch.filter((i) => i.prospect.phase_id === ph.phase_id)} result={computePhaseResult(ph, facts, now)}
                   unticked={unticked} toggle={toggle} ticked={ticked} busy={running} progress={progress} onSend={send}
                   onAccept={() => act("phase.accept", { phase_id: ph.phase_id }).catch((e) => setNote(String(e.message ?? e)))} />
@@ -231,8 +244,8 @@ export function PhasesHome() {
   );
 }
 
-function PhaseCard({ phase, track, voice, voices, own, sendAs, prospects, messages, tracks, phases, batch, result, unticked, toggle, ticked, busy, progress, onSend, onAccept }: {
-  phase: Phase; track: Track; voice: string; voices: Voice[]; own: boolean; sendAs: string | null;
+function PhaseCard({ phase, voice, voices, own, sendAs, gmailReason, today, prospects, messages, tracks, phases, batch, result, unticked, toggle, ticked, busy, progress, onSend, onAccept }: {
+  phase: Phase; voice: string; voices: Voice[]; own: boolean; sendAs: string | null; gmailReason: string | null; today: string;
   prospects: ProgrammeProspect[]; messages: ProgrammeMessage[]; tracks: Track[]; phases: Phase[]; batch: BatchItem[]; result: PhaseResult;
   unticked: Set<string>; toggle: (id: string) => void; ticked: (ids: string[]) => string[]; busy: boolean; progress: Progress | null;
   onSend: (ids: string[]) => void; onAccept: () => void;
@@ -250,6 +263,21 @@ function PhaseCard({ phase, track, voice, voices, own, sendAs, prospects, messag
   const nFirst = ticked(firsts).length;
   const nFollow = ticked(followups).length;
   const canSend = own && !!sendAs && !busy;
+  // The next day this phase has copy waiting in this voice, for the reason shown beside a disabled Send button.
+  const pendingDays = (step: "first" | "later") => prospects
+    .filter((p) => !BLOCKED_STATUSES.has(p.status))
+    .flatMap((p) => messages.filter((m) => m.prospect_ext_id === p.ext_id && m.status === "pending" && !!m.send_on && (step === "first" ? m.step === "first" : m.step !== "first") && messageVoice(m, p, tracks) === voice))
+    .map((m) => (m.send_on! < today ? today : m.send_on!)).sort();
+  const nextFirst = pendingDays("first")[0] ?? null;
+  const nextLater = pendingDays("later")[0] ?? null;
+  const planned = phase.status === "planned";
+  const sendReason: string | null =
+    busy ? "Sending is in progress" :
+    gmailReason ? gmailReason :
+    planned ? "This phase starts once the one before it is judged" :
+    !firsts.length ? (nextFirst ? `First emails go out ${nextFirst === today ? "today" : fmtDay(nextFirst)}` : "No first emails are waiting in this phase") :
+    !nFirst ? "Tick at least one recipient" : null;
+  const followReason: string | null = busy ? null : gmailReason ?? (!nFollow ? "Tick at least one recipient" : null);
   const sorted = [...prospects].sort((a, b) => (a.variant ?? "").localeCompare(b.variant ?? "") || a.company.localeCompare(b.company));
 
   function rowState(p: ProgrammeProspect): { text: string; tone: "neutral" | "pos" | "neg" | "warn"; item?: BatchItem; off?: boolean } {
@@ -260,7 +288,6 @@ function PhaseCard({ phase, track, voice, voices, own, sendAs, prospects, messag
     if (p.status === "replied") return { text: "Replied", tone: "pos", off: true };
     if (p.status === "bounced") return { text: "Bounced", tone: "neg", off: true };
     if (BLOCKED_STATUSES.has(p.status)) return { text: p.status.replace(/_/g, " "), tone: "neg", off: true };
-    if (by && by !== voice) return { text: `Sent by ${label(by)}`, tone: "neutral", off: true };
     if (item) return { text: item.step === "first" ? (item.overdue ? "Overdue" : "Due today") : `${STEP_LABEL[item.step]} due`, tone: "warn", item };
     if (by === voice) {
       const sent = messages.find((m) => m.prospect_ext_id === p.ext_id && m.step === "first" && m.status === "sent");
@@ -292,11 +319,12 @@ function PhaseCard({ phase, track, voice, voices, own, sendAs, prospects, messag
       <div className="mt-3 flex flex-wrap items-center gap-2">
         <button className={btnCls} aria-expanded={show === "preview"} onClick={() => setShow(show === "preview" ? null : "preview")}>Preview email</button>
         <button className={btnCls} aria-expanded={show === "recipients"} onClick={() => setShow(show === "recipients" ? null : "recipients")}>Recipients ({prospects.length})</button>
-        {own && hasCopy && firsts.length > 0 && !confirm && <button className={btnPrimary} disabled={!canSend || !nFirst} onClick={() => setConfirm("first")}>Send {nFirst} email{nFirst === 1 ? "" : "s"}</button>}
+        {own && hasCopy && !confirm && <button className={btnPrimary} disabled={!canSend || !nFirst || !firsts.length} onClick={() => setConfirm("first")}>{nFirst ? `Send ${nFirst} email${nFirst === 1 ? "" : "s"}` : "Send emails"}</button>}
+        {own && hasCopy && !confirm && sendReason && <span className="text-arepo-muted">{sendReason}</span>}
         {own && hasCopy && followups.length > 0 && !confirm && <button className={btnPrimary} disabled={!canSend || !nFollow} onClick={() => setConfirm("followup")}>Send {nFollow} follow-up{nFollow === 1 ? "" : "s"}</button>}
+        {own && hasCopy && followups.length > 0 && !confirm && followReason && <span className="text-arepo-muted">{followReason}</span>}
+        {own && hasCopy && !confirm && !followups.length && nextLater && !sendReason && <span className="text-arepo-muted">Follow-ups go out {fmtDay(nextLater)}</span>}
         {own && !hasCopy && <span className="text-arepo-muted">No emails in your voice yet.</span>}
-        {own && hasCopy && !firsts.length && !followups.length && <span className="text-arepo-muted">Nothing due today.</span>}
-        {own && hasCopy && (firsts.length > 0 || followups.length > 0) && !sendAs && <span className="text-arepo-muted">Connect Gmail to send.</span>}
       </div>
       {confirm && (
         <div className="mt-3 rounded-control border border-arepo-border bg-arepo-surface2 p-3">

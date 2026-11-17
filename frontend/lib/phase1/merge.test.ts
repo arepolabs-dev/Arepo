@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { OPT_OUT, endsWithOptOut, findUnresolved, mailtoLink, renderEmail } from "./merge";
+import { OLD_OPT_OUT, OPT_OUT, endsWithOptOut, hasOptOut, findUnresolved, mailtoLink, renderEmail } from "./merge";
 
 const dayyan = { name: "Dayyan Sheikh", firstName: "Dayyan", email: "dayyan.sheikh@arepolabs.com", bookingLink: "https://cal.example/d" };
 const jack = { ...dayyan, name: "Jack Burbridge", firstName: "Jack", email: "jack.burbridge@arepolabs.com" };
@@ -22,8 +22,8 @@ describe("renderEmail", () => {
     expect(r.openerUsed).toBe("G");
   });
   it("does not duplicate the opt-out and flags leftovers", () => {
-    const r = renderEmail({ prospect: p, subject: "s", body: `Book: [booking link] [unknown thing]\n\n${OPT_OUT}`, sender: dayyan });
-    expect(r.body.match(/reply "stop"/g)).toHaveLength(1);
+    const r = renderEmail({ prospect: p, subject: "s", body: `Book: [booking link] [unknown thing]\n\n${OLD_OPT_OUT}`, sender: dayyan });
+    expect(r.body.match(/rather not hear from me/g)).toHaveLength(1);
     expect(r.body).toContain("https://cal.example/d");
     expect(r.unresolved).toEqual(["[unknown thing]"]);
   });
@@ -35,6 +35,20 @@ describe("renderEmail", () => {
 });
 describe("helpers", () => {
   it("finds tokens", () => expect(findUnresolved("a {x} [y z]")).toEqual(["{x}", "[y z]"]));
+  it("accepts the opt-out above the sign-off and appends nothing", () => {
+    const body = "Hi {first_name},\n\nHello.\n\nIf you'd rather not hear from me, reply to this email and let me know.\n\nKind regards,\nDayyan Sheikh\nArepo Labs";
+    const r = renderEmail({ prospect: p, subject: "s", body, sender: dayyan });
+    expect(r.body.match(/rather not hear from me/g)).toHaveLength(1);
+    expect(r.body.endsWith("Arepo Labs")).toBe(true);
+    expect(endsWithOptOut(body)).toBe(true);
+    expect(hasOptOut("IF YOU'D RATHER NOT HEAR FROM ME, say so")).toBe(true);
+  });
+  it("appends the new fallback line when there is no opt-out", () => {
+    const r = renderEmail({ prospect: p, subject: "s", body: "Hello.\n\nDayyan", sender: dayyan });
+    expect(r.body.endsWith("reply to this email and let me know.")).toBe(true);
+    expect(hasOptOut("Hello there")).toBe(false);
+  });
+  it("accepts the old opt-out wording", () => expect(endsWithOptOut(`hi\n${OLD_OPT_OUT}\n`)).toBe(true));
   it("detects opt-out", () => expect(endsWithOptOut(`hi\n${OPT_OUT}\n`)).toBe(true));
   it("builds mailto", () => expect(mailtoLink("a@b.co", "S s", "B\nb")).toBe("mailto:a%40b.co?subject=S%20s&body=B%0Ab"));
 });

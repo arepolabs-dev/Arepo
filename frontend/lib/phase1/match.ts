@@ -70,12 +70,16 @@ export function isAutoReply(m: Pick<InboundMessage, "subject" | "headers">): boo
 
 /** A reply that is just "stop" (the opt-out wording), ignoring quoted text and punctuation. */
 export function looksLikeStop(bodyText: string): boolean {
-  const first = bodyText
-    .split("\n")
-    .map((l) => l.trim())
-    .find((l) => l && !l.startsWith(">"));
-  if (!first) return false;
-  return /^["'“]?(stop|unsubscribe|remove me)[\s.!"'”]*$/i.test(first);
+  const lines = bodyText.split("\n").map((l) => l.trim());
+  const fresh: string[] = [];
+  for (const l of lines) {
+    if (l.startsWith(">") || /^on .{5,120} wrote:$/i.test(l)) break;
+    if (l) fresh.push(l);
+  }
+  if (!fresh.length) return false;
+  if (/^["'“]?(stop|unsubscribe|remove me)[\s.!"'”]*$/i.test(fresh[0]!)) return true;
+  const text = fresh.join(" ");
+  return /\b(take (me|us) off|remove (me|us)|unsubscribe|opt (me|us) out|stop (emailing|contacting|writing|messaging|sending)|(do not|don't|dont) (email|contact|write to) (me|us))\b/i.test(text);
 }
 
 export function matchInbound(msg: InboundMessage, emails: KnownEmail[], prospects: KnownProspect[]): Match | null {

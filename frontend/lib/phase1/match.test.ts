@@ -24,6 +24,9 @@ describe("classifiers", () => {
   it("stop", () => {
     expect(looksLikeStop("Stop.\n\n> quoted")).toBe(true);
     expect(looksLikeStop("Please stop by on Tuesday")).toBe(false);
+    expect(looksLikeStop("please remove me")).toBe(true);
+    expect(looksLikeStop("Not interested, take me off your list.\n\nOn Tue, X wrote:\n> hi")).toBe(true);
+    expect(looksLikeStop("Thanks, interested.\n\nOn Tue, X wrote:\n> if you'd rather not hear from me, remove me")).toBe(false);
   });
   it("bareAddress", () => expect(bareAddress('"A B" <A@B.co>')).toBe("a@b.co"));
 });

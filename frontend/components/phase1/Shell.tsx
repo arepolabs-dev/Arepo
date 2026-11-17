@@ -8,6 +8,8 @@ export const PHASE1_TABS = [
   { href: "/phase1", label: "Phases" },
   { href: "/phase1/replies", label: "Replies" },
   { href: "/phase1/prospects", label: "Prospects" },
+  { href: "/phase1/plan", label: "Plan" },
+  { href: "/phase1/how-to", label: "How to use" },
 ] as const;
 
 function isActive(path: string, href: string): boolean {
