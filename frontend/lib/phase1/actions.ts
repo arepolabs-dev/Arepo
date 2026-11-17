@@ -8,6 +8,7 @@ import { eventForStatus } from "./pipeline";
 import { checkSendable } from "./rules";
 import { DAILY_CAP } from "./send";
 import { londonDayStart } from "./metrics";
+import { onEmailSent, onStatusChange } from "./programme-hooks";
 import type { Phase1Db } from "./supabase";
 import type { Insert, Phase1User, ProspectStatus, ReplyType, Row } from "./types";
 
@@ -57,6 +58,7 @@ export async function setStatus(db: Phase1Db, user: Phase1User, id: string, to: 
   if (p.status === to) return p;
   const [row] = await db.update("prospects", { id }, { status: to, status_changed_at: new Date().toISOString() });
   await db.insert("events", { prospect_id: id, owner_id: user.personId, kind: eventForStatus(to), detail: { from: p.status, to, ...(detail ?? {}) } });
+  await onStatusChange(db, id, to);
   return row!;
 }
 
@@ -186,6 +188,7 @@ export async function recordSent(
     gmail_thread_id: info.gmail_thread_id ?? e.gmail_thread_id,
     rfc_message_id: info.rfc_message_id ?? e.rfc_message_id,
   });
+  await onEmailSent(db, emailId, row?.sent_at ?? new Date().toISOString());
   const p = await getProspect(db, e.prospect_id);
   if (p.status === "prospect") await setStatus(db, user, p.id, "contacted", { email_id: emailId });
   return row!;

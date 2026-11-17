@@ -2,6 +2,7 @@ import {
   ActionError, cancelComposed, classifyReply, composeEmails, createProspect, importProspects, recordSent,
   saveVariant, setStatus, updateProspect, type ComposeItem,
 } from "@/lib/phase1/actions";
+import { acceptPhase, queueBatch, requestLeads, reviewLead, setReplyCategory, skipMessage } from "@/lib/phase1/programme-actions";
 import { findMailbox } from "@/lib/phase1/mailbox";
 import { errorResponse, getDb, requireUser } from "@/lib/phase1/supabase";
 import type { ProspectStatus, ReplyType } from "@/lib/phase1/types";
@@ -53,6 +54,18 @@ export async function POST(request: Request) {
         return Response.json({ cancelled: await cancelComposed(db, (b.ids ?? []) as string[]) });
       case "reply.classify":
         return Response.json({ reply: await classifyReply(db, user, str("id"), str("type") as ReplyType) });
+      case "programme.queue":
+        return Response.json(await queueBatch(db, user, ((b.message_ids ?? []) as unknown[]).map(String)));
+      case "programme.skip":
+        return Response.json(await skipMessage(db, str("message_id")));
+      case "phase.accept":
+        return Response.json(await acceptPhase(db, user, str("phase_id")));
+      case "lead.review":
+        return Response.json(await reviewLead(db, str("ext_id"), b.decision === "approve" ? "approve" : "skip"));
+      case "lead.request":
+        return Response.json(await requestLeads(db, user, b));
+      case "reply.category":
+        return Response.json(await setReplyCategory(db, user, str("id"), str("category")));
       case "variant.save":
         return Response.json({ variant: await saveVariant(db, b) });
       case "variant.retire": {

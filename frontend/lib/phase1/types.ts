@@ -185,6 +185,9 @@ export interface Reply {
   mailbox_id: Uuid | null;
   matched_by: "thread" | "in_reply_to" | "address" | "bounce" | null;
   subject: string | null;
+  playbook_category?: string | null;
+  reply_sent_at?: Iso | null;
+  reply_sent_message_id?: string | null;
 }
 
 export interface EventRow {
@@ -253,6 +256,44 @@ export interface Enquiry {
   handled_by: Uuid | null;
 }
 
+
+// ---------------------------------------------------------------- programme (migration 0004)
+
+export interface ProgrammeMeta { key: string; value: unknown; updated_at: Iso }
+export interface Track { id: Uuid; key: string; name: string; sender: string | null; description: string | null; sort_order: number; created_at: Iso }
+export type PhaseStatus = "planned" | "active" | "judged";
+export interface Phase {
+  id: Uuid; phase_id: string; track_key: string; ord: number; variable: string | null; hypothesis: string | null;
+  variants: Record<string, unknown> | null; send_days: string[] | null; followup_days: string[] | null;
+  judge_on: string | null; winner_rule: string | null; min_sample: number;
+  on_a_wins: string | null; on_b_wins: string | null; on_c_wins: string | null; on_no_signal: string | null;
+  status: PhaseStatus; winner: string | null; judged_at: Iso | null; result: Record<string, unknown> | null; created_at: Iso;
+}
+export interface ProgrammeProspect {
+  id: Uuid; ext_id: string; prospect_id: Uuid | null; track_key: string; phase_id: string | null; variant: string | null;
+  segment: string | null; area_kind: "local" | "non_local" | null; company: string; contact_name: string | null;
+  email: string | null; website: string | null; what_they_do: string | null; hook: string | null; source: string | null;
+  send_slot: string | null; status: string; request_id: Uuid | null; email_norm: string | null; domain_norm: string | null; created_at: Iso;
+}
+export type MessageStep = "first" | "followup1" | "followup2";
+export interface ProgrammeMessage {
+  id: Uuid; prospect_ext_id: string; step: MessageStep; subject: string | null; body: string | null; send_on: string | null;
+  template: boolean; status: "pending" | "sent" | "skipped"; outreach_email_id: Uuid | null; sent_at: Iso | null; created_at: Iso;
+}
+export interface ReplyPlaybook {
+  id: Uuid; category: string; track_key: string; detect_cues: string[] | null; reply_subject: string | null;
+  reply_body: string | null; next_status: string | null; retouch: boolean; created_at: Iso;
+}
+export interface ReviewLog {
+  id: Uuid; reviewed_on: string; track_key: string | null; sends: number | null;
+  replies_by_variant: Record<string, unknown> | null; learnings: string | null; decision: string | null;
+  created_by: string | null; created_at: Iso;
+}
+export interface LeadRequest {
+  id: Uuid; requested_by: string | null; track: string; count: number; area: string; note: string | null;
+  status: "pending" | "working" | "done" | "failed"; created_at: Iso; done_at: Iso | null; result_count: number | null;
+}
+
 /** Table name -> row type. */
 export interface Phase1Tables {
   people: Person;
@@ -267,6 +308,14 @@ export interface Phase1Tables {
   checklist: ChecklistItem;
   plan_targets: PlanTarget;
   enquiries: Enquiry;
+  programme_meta: ProgrammeMeta;
+  tracks: Track;
+  phases: Phase;
+  programme_prospects: ProgrammeProspect;
+  programme_messages: ProgrammeMessage;
+  reply_playbook: ReplyPlaybook;
+  review_log: ReviewLog;
+  lead_requests: LeadRequest;
 }
 
 export type TableName = keyof Phase1Tables;
@@ -287,6 +336,14 @@ export const TABLE_NAMES: TableName[] = [
   "checklist",
   "plan_targets",
   "enquiries",
+  "programme_meta",
+  "tracks",
+  "phases",
+  "programme_prospects",
+  "programme_messages",
+  "reply_playbook",
+  "review_log",
+  "lead_requests",
 ];
 
 export const PIPELINE_STAGES: ProspectStatus[] = [

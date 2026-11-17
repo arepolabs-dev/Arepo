@@ -36,6 +36,15 @@ export interface Phase1State {
   enquiries: Row<"enquiries">[];
   plan_targets: Row<"plan_targets">[];
   mailboxes: PublicMailbox[];
+  programme: {
+    tracks: Row<"tracks">[];
+    phases: Row<"phases">[];
+    prospects: Row<"programme_prospects">[];
+    messages: Row<"programme_messages">[];
+    playbook: Row<"reply_playbook">[];
+    reviews: Row<"review_log">[];
+    leadRequests: Row<"lead_requests">[];
+  };
 }
 
 export function nameFromEmail(email: string): { name: string; firstName: string } {
@@ -53,7 +62,7 @@ export async function loadState(user: Phase1User): Promise<Phase1State> {
       return await db.select(t);
     } catch {
       dbOk = false;
-      dbNote = "The database is not ready yet (migrations 0001 to 0003 not applied?). Showing what can be read.";
+      dbNote = "The database is not ready yet (migrations 0001 to 0004 not applied?). Showing what can be read.";
       return [];
     }
   };
@@ -66,6 +75,17 @@ export async function loadState(user: Phase1User): Promise<Phase1State> {
     safe("people"), safe("prospects"), safe("variants"), safe("tests"), safe("batches"), safe("outreach_emails"),
     safe("replies"), safe("events"), safe("enquiries"), safe("plan_targets"), safe("mailboxes"),
   ]);
+  const progSafe = async <T extends TableName>(t: T): Promise<Row<T>[]> => {
+    try {
+      return await db.select(t);
+    } catch {
+      return []; // migration 0004 not applied yet: the programme views show an empty state
+    }
+  };
+  const [tracks, phases, pprospects, pmessages, playbook, reviews, leadRequests] = await Promise.all([
+    progSafe("tracks"), progSafe("phases"), progSafe("programme_prospects"), progSafe("programme_messages"),
+    progSafe("reply_playbook"), progSafe("review_log"), progSafe("lead_requests"),
+  ]);
   const person = people.find((p) => p.email === user.email);
   const fallback = nameFromEmail(user.email);
   const name = person?.name || fallback.name;
@@ -77,6 +97,7 @@ export async function loadState(user: Phase1User): Promise<Phase1State> {
     dbOk,
     dbNote,
     gmail: { configured: !!cfg, missing: missingGmailEnv(), sharedAddress: sharedAddress() },
+    programme: { tracks, phases, prospects: pprospects, messages: pmessages, playbook, reviews, leadRequests },
     people, prospects, variants, tests, batches, outreach_emails, replies, events, enquiries, plan_targets,
     mailboxes: mailboxes.map((m) => ({
       id: m.id, owner_id: m.owner_id, address: m.address, kind: m.kind, send_as: m.send_as, send_as_name: m.send_as_name,
