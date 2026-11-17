@@ -5,12 +5,15 @@ import { usePathname } from "next/navigation";
 import { Phase1Provider } from "./data";
 
 export const PHASE1_TABS = [
-  { href: "/phase1", label: "Plan" },
-  { href: "/phase1/prospects", label: "Prospects" },
-  { href: "/phase1/pipeline", label: "Pipeline" },
-  { href: "/phase1/emails", label: "Emails" },
+  { href: "/phase1", label: "Today" },
   { href: "/phase1/replies", label: "Replies" },
+  { href: "/phase1/phases", label: "Phases" },
+  { href: "/phase1/prospects", label: "Prospects" },
+  { href: "/phase1/emails", label: "Emails" },
+  { href: "/phase1/records", label: "Records" },
   { href: "/phase1/metrics", label: "Metrics" },
+  { href: "/phase1/plan", label: "Plan" },
+  { href: "/phase1/pipeline", label: "Pipeline" },
   { href: "/phase1/profiles", label: "Profiles" },
 ] as const;
 

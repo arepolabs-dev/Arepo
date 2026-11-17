@@ -63,7 +63,7 @@ export async function POST(request: Request) {
       case "lead.review":
         return Response.json(await reviewLead(db, str("ext_id"), b.decision === "approve" ? "approve" : "skip"));
       case "lead.request":
-        return Response.json(await requestLeads(db, user, b));
+        return Response.json(await requestLeads(db, user, b as Record<string, unknown>));
       case "reply.category":
         return Response.json(await setReplyCategory(db, user, str("id"), str("category")));
       case "variant.save":

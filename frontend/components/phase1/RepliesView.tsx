@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { ReplyType } from "@/lib/phase1/types";
 import { usePhase1 } from "./data";
+import { PlaybookReply } from "./ReplyPlaybook";
 import { Banner, Loading, Pill, StatusBanners, Title, btnCls, btnPrimary, fmtDate } from "./ui";
 
 const TYPES: { t: ReplyType; label: string }[] = [
@@ -85,6 +86,7 @@ export function RepliesView() {
                     <button key={x.t} className={`${btnCls} py-1 ${r.reply_type === x.t ? "border-arepo-ink" : ""}`} onClick={() => act("reply.classify", { id: r.id, type: x.t }).catch((e) => setNote(String(e.message ?? e)))}>{x.label}</button>
                   ))}
                 </div>
+                {r.reply_type !== "bounce" && r.reply_type !== "auto" && <PlaybookReply reply={r} />}
                 {r.reply_type === "stop" && <p className="mt-1 text-xs text-arepo-muted">Marked do not contact: no more emails will go to this business.</p>}
               </li>
             );

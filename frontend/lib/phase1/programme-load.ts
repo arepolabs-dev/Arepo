@@ -185,7 +185,7 @@ export async function loadProgramme(db: Phase1Db, json: unknown, opts: LoadOptio
     const row = { subject: str(m.subject), body: str(m.body), send_on: str(m.send_on), template: m.template === true };
     const found = mByKey.get(mkey(ext, step));
     if (!found) {
-      const [made] = await db.insert("programme_messages", { prospect_ext_id: ext, step, ...row });
+      const [made] = await db.insert("programme_messages", { prospect_ext_id: ext, step, status: "pending", ...row });
       mByKey.set(mkey(ext, step), made!);
       report.messages.added++;
     } else if (found.status === "pending") {

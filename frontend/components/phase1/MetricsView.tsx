@@ -3,6 +3,7 @@
 import { computeCounts, followUpsDue, funnel, oneIn, replyRate, type Ratio } from "@/lib/phase1/metrics";
 import { usePhase1 } from "./data";
 import { METRIC_LABEL, metricValue, planCounts, planStartDate } from "./derived";
+import { ProgrammeMetrics } from "./ProgrammeMetrics";
 import { Loading, Pill, StatusBanners, Title } from "./ui";
 
 const pct = (r: Ratio) => (r.rate == null ? "n/a" : `${(r.rate * 100).toFixed(r.rate < 0.1 ? 1 : 0)}%`);
@@ -37,6 +38,7 @@ export function MetricsView() {
     <div>
       <Title title="Metrics" sub={`Counted from ${planStartDate().toLocaleDateString("en-GB", { day: "numeric", month: "long", timeZone: "Europe/London" })}, London time. Weeks start on Monday.`} />
       <StatusBanners gmail={false} />
+      <ProgrammeMetrics />
 
       <h2 className="mb-2 font-display text-lg text-arepo-ink">Volume</h2>
       <div className="mb-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">

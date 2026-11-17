@@ -1,5 +1,5 @@
-import { PlanView } from "@/components/phase1/PlanView";
+import { TodayView } from "@/components/phase1/TodayView";
 
 export default function Page() {
-  return <PlanView />;
+  return <TodayView />;
 }
