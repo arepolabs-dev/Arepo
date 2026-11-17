@@ -6,7 +6,7 @@ import {
   BLOCKED_STATUSES, CALL_STATUSES, computePhaseResult, londonToday, messageVoice, prospectFacts, renderMessage, selectBatch, senderKey, sentBy, slug, variantKeys, variantText,
   type BatchItem, type PhaseResult,
 } from "@/lib/phase1/programme";
-import { bodyToHtml } from "@/lib/phase1/html-email";
+import { emailHtml } from "@/lib/phase1/signature";
 import { randomGapSeconds } from "@/lib/phase1/send";
 import type { Phase, ProgrammeMessage, ProgrammeProspect, Track } from "@/lib/phase1/types";
 import { usePhase1 } from "./data";
@@ -361,7 +361,7 @@ function PhaseCard({ phase, voice, voices, own, sendAs, gmailReason, today, pros
                   <div className="mt-2">
                     <div className="text-arepo-muted">To {chosen!.contact_name ? `${chosen!.contact_name} <${chosen!.email}>` : chosen!.email}</div>
                     <div className="mt-1 font-medium text-arepo-ink">{r.subject}</div>
-                    <div className="mt-2 text-arepo-ink2 [&_a]:text-blue-700 [&_a]:underline [&_p]:mb-3" dangerouslySetInnerHTML={{ __html: bodyToHtml(r.body) }} />
+                    <div className="mt-2 text-arepo-ink2 [&_a]:text-blue-700 [&_a]:underline [&_p]:mb-3" dangerouslySetInnerHTML={{ __html: emailHtml(r.body, sendAs) }} />
                     {r.unresolved.length > 0 && <p className="mt-2 text-red-700">Unfilled: {r.unresolved.join(" ")}</p>}
                   </div>
                 )}

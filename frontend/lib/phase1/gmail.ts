@@ -4,7 +4,7 @@
  * alias; replies reach the personal Gmail by Cloudflare forwarding. Refresh tokens last 7 days while the Google
  * app is in Testing mode, so invalid_grant means "Reconnect Gmail", never a crash.
  */
-import { bodyToHtml } from "./html-email";
+import { emailHtml, emailText } from "./signature";
 import { randomUUID } from "node:crypto";
 import { tokenKey } from "./crypto";
 
@@ -167,12 +167,12 @@ export function buildMime(m: MimeInput): { raw: string; messageId: string } {
     'Content-Type: text/plain; charset="UTF-8"',
     "Content-Transfer-Encoding: base64",
     "",
-    b64(m.body.replace(/\r?\n/g, "\r\n")),
+    b64(emailText(m.body, m.fromAddress).replace(/\r?\n/g, "\r\n")),
     `--${boundary}`,
     'Content-Type: text/html; charset="UTF-8"',
     "Content-Transfer-Encoding: base64",
     "",
-    b64(bodyToHtml(m.body)),
+    b64(emailHtml(m.body, m.fromAddress)),
     `--${boundary}--`,
     "",
   ];
