@@ -1,5 +1,5 @@
 /** Dayyan's email signature, only for mail sent as his arepolabs address. Pure; the sender, Send test and the preview share it. */
-import { bodyToHtml, escapeHtml } from "./html-email";
+import { bodyToHtml, escapeHtml, stripBold } from "./html-email";
 
 export const SIGNATURE_SENDER = "dayyan.sheikh@arepolabs.com";
 export const SIG_NAME = "Dayyan Sheikh";
@@ -40,15 +40,15 @@ export function stripTrailingName(body: string): string {
   return body.replace(/(Kind regards,?)[ \t]*\r?\n+[ \t]*Dayyan Sheikh[ \t]*(?:\r?\n+[ \t]*Arepo Labs[ \t]*)?\s*$/i, "$1");
 }
 
-/** The plain-text part. Unchanged for any other sender. */
+/** The plain-text part: **bold** markers dropped; otherwise unchanged for any other sender. */
 export function emailText(body: string, fromAddress: string | null | undefined): string {
-  if (!hasSignature(fromAddress)) return body;
-  const b = stripTrailingName(body).replace(/\s+$/, "");
+  if (!hasSignature(fromAddress)) return stripBold(body);
+  const b = stripBold(stripTrailingName(body)).replace(/\s+$/, "");
   return `${b}${/Kind regards,?$/i.test(b) ? "\n" : "\n\n"}${signatureText()}`;
 }
 
-/** The HTML part. Unchanged for any other sender. */
+/** The HTML part. Styled type and spacing for Dayyan's sender; plain markup for any other. */
 export function emailHtml(body: string, fromAddress: string | null | undefined): string {
   if (!hasSignature(fromAddress)) return bodyToHtml(body);
-  return `${bodyToHtml(stripTrailingName(body))}\n${signatureHtml()}`;
+  return `${bodyToHtml(stripTrailingName(body), { styled: true })}\n${signatureHtml()}`;
 }

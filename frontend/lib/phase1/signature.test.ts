@@ -45,4 +45,11 @@ describe("signature", () => {
     expect(emailHtml(body, "dayyan.sheikh@arepolabs.com")).toContain("&lt;b&gt;there&lt;/b&gt; &amp; co.");
   });
   it("uses inline styles only", () => expect(signatureHtml()).not.toMatch(/class=|<style/));
+  it("drops bold markers from the plain part and bolds them in the HTML part", () => {
+    const raw = buildMime({ fromName: "X", fromAddress: "dayyan.sheikh@arepolabs.com", to: "a@b.co", subject: "S", body: "Hi,\n\n**The first look is free**.\n\nKind regards," }).raw;
+    expect(dec(raw, "text/plain")).toContain("Hi,\n\nThe first look is free.");
+    expect(dec(raw, "text/plain")).not.toContain("**");
+    expect(dec(raw, "text/html")).toContain("<b>The first look is free</b>.");
+    expect(emailText("**x**", "jack@arepolabs.com")).toBe("x");
+  });
 });
