@@ -8,7 +8,7 @@ export const maxDuration = 60;
 
 /** Loads the bundled programme (prospects, phases, messages) into the database. Idempotent; secret-protected. */
 export async function POST(request: Request) {
-  if (!cronAuthorised(request)) return Response.json({ error: "Not allowed" }, { status: 401 });
+  if (!(await cronAuthorised(request))) return Response.json({ error: "Not allowed" }, { status: 401 });
   try {
     const report = await loadProgramme(getDb(), data);
     return Response.json({ ok: true, report });

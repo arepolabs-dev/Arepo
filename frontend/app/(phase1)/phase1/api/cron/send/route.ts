@@ -7,7 +7,7 @@ export const maxDuration = 60;
 
 /** Called every minute by Supabase pg_cron (pg_net). Sends at most 1 due email per sender per run. */
 export async function POST(request: Request) {
-  if (!cronAuthorised(request)) return Response.json({ error: "Not allowed" }, { status: 401 });
+  if (!(await cronAuthorised(request))) return Response.json({ error: "Not allowed" }, { status: 401 });
   try {
     const db = getDb();
     const r = await sendDue(db, makeGmailTransport(db));

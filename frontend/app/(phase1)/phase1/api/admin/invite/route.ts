@@ -7,7 +7,7 @@ export const dynamic = "force-dynamic";
 
 /** Mints a one-time passkey invite link for an allowed email. Secret-protected; the link is returned once, never stored. */
 export async function POST(request: Request) {
-  if (!cronAuthorised(request)) return Response.json({ error: "Not allowed" }, { status: 401 });
+  if (!(await cronAuthorised(request))) return Response.json({ error: "Not allowed" }, { status: 401 });
   const { email } = (await request.json().catch(() => ({}))) as { email?: string };
   try {
     const token = await createInvite(inviteStore(), String(email ?? ""), allowedEmails());
