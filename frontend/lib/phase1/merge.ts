@@ -17,6 +17,32 @@ export function hasOptOut(text: string): boolean {
   return /rather not hear from me/i.test(text) || /reply\s+["“'‘]?\s*stop/i.test(text) || /unsubscribe/i.test(text);
 }
 
+const OPT_LINE = /rather not hear from me|reply\s+["“'‘]?\s*stop/i;
+const SIGN_BLOCK = /^(kind regards|best wishes|best|regards|many thanks|thanks|cheers),?$/i;
+const NAME_LINE = /^(dayyan(?: sheikh)?|jack(?: burbridge)?)$/i;
+
+/**
+ * Put the opt-out line ABOVE the sign-off for every sender, once. Any opt-out line already in the text (the old
+ * "reply stop" wording, or one pasted under the signature) is removed first; a signature block typed under
+ * "Kind regards," is cut back to the name (the sender adds the real signature). With no sign-off at all the
+ * line goes last, because there is nowhere better.
+ */
+export function placeOptOut(body: string): string {
+  let lines = body.replace(/\r\n/g, "\n").replace(/\s+$/, "").split("\n").filter((l) => !OPT_LINE.test(l));
+  let at = lines.findLastIndex((l) => SIGN_BLOCK.test(l.trim()));
+  if (at < 0) at = lines.findLastIndex((l, i) => NAME_LINE.test(l.trim()) && i > 0);
+  if (at >= 0 && SIGN_BLOCK.test(lines[at]!.trim())) {
+    // Keep "Kind regards," and the name line only; drop the company, address and email lines typed after them.
+    const tail = lines.slice(at + 1);
+    const nameAt = tail.findIndex((l) => NAME_LINE.test(l.trim()));
+    lines = [...lines.slice(0, at + 1), ...(nameAt >= 0 ? [tail[nameAt]!] : []), ...(nameAt >= 0 ? tail.slice(nameAt + 1).filter((l) => /^https?:\/\//i.test(l.trim())) : tail.filter((l) => /^https?:\/\//i.test(l.trim())))];
+  }
+  const head = at >= 0 ? lines.slice(0, at) : lines;
+  const rest = at >= 0 ? lines.slice(at) : [];
+  const h = head.join("\n").replace(/\s+$/, "");
+  return [h, OPT_OUT, rest.join("\n")].filter((x) => x.trim()).join("\n\n");
+}
+
 export interface Sender {
   /** Full name, e.g. "Dayyan Sheikh". */
   name: string;
@@ -122,7 +148,7 @@ function finishBody(body: string, signature: string | null | undefined, s: Sende
     if (hasSignoff) lines[last] = s.firstName;
     out = lines.join("\n");
   }
-  if (!hasOptOut(out)) out = out.replace(/\s+$/, "") + "\n\n" + OPT_OUT;
+  if (!hasOptOut(out)) out = placeOptOut(out);
   return fillBrackets(out, s);
 }
 

@@ -4,8 +4,7 @@
  * the owner comes from the session. Nothing here sends mail: sending stays in /phase1/api/gmail/send.
  */
 import { ActionError, sentTodayCount } from "./actions";
-import { OPT_OUT, hasOptOut } from "./merge";
-import { canUse } from "./mailbox";
+import { canUse, fromIdentity } from "./mailbox";
 import { aheadInPhase, computePhaseResult, londonToday, prospectFacts, selectBatch, senderKey, type BatchItem } from "./programme";
 import { DAILY_CAP } from "./send";
 import type { Phase1Db } from "./supabase";
@@ -38,9 +37,9 @@ export async function batchFor(db: Phase1Db, user: Phase1User, now = new Date())
 }
 
 async function pickMailbox(db: Phase1Db, user: Phase1User): Promise<Row<"mailboxes">> {
-  const boxes = (await db.select("mailboxes")).filter((m) => canUse(m, user) && m.status === "connected" && m.send_as_verified && m.refresh_token_enc);
+  const boxes = (await db.select("mailboxes")).filter((m) => canUse(m, user) && m.status === "connected" && !!fromIdentity(m) && m.refresh_token_enc);
   const m = boxes.find((b) => b.kind === "personal") ?? boxes[0];
-  if (!m || !m.send_as) throw new ActionError(409, "No Gmail mailbox is connected and verified for sending yet");
+  if (!m || !fromIdentity(m)) throw new ActionError(409, "No Gmail mailbox is connected and verified for sending yet");
   return m;
 }
 
@@ -72,11 +71,11 @@ export async function queueBatch(db: Phase1Db, user: Phase1User, messageIds: str
   if (ready.length > Math.max(0, left)) throw new ActionError(409, `The daily cap is ${DAILY_CAP} per mailbox: ${Math.max(0, left)} left today`);
   const emails: QueuedEmail[] = [];
   for (const i of ready) {
-    const body = hasOptOut(i.body) ? i.body : `${i.body.replace(/\s+$/, "")}\n\n${OPT_OUT}`;
+    const body = i.body; // renderMessage has already put the opt-out line above the sign-off
     let row: Row<"outreach_emails"> | undefined;
     const prior = i.message.outreach_email_id ? (await db.select("outreach_emails", { eq: { id: i.message.outreach_email_id } }))[0] : undefined;
     if (prior && prior.status === "composed" && prior.owner_id === user.personId) {
-      [row] = await db.update("outreach_emails", { id: prior.id }, { subject: i.subject, body_rendered: body, mailbox_id: mailbox.id, from_address: mailbox.send_as, sent_via: "gmail" });
+      [row] = await db.update("outreach_emails", { id: prior.id }, { subject: i.subject, body_rendered: body, mailbox_id: mailbox.id, from_address: fromIdentity(mailbox)!.address, sent_via: "gmail" });
     } else {
       if (!i.prospect.prospect_id) {
         skipped.push({ message_id: i.message.id, reason: "No linked prospect" });
@@ -84,13 +83,36 @@ export async function queueBatch(db: Phase1Db, user: Phase1User, messageIds: str
       }
       [row] = await db.insert("outreach_emails", {
         prospect_id: i.prospect.prospect_id, owner_id: user.personId, to_address: i.prospect.email, subject: i.subject, body_rendered: body,
-        status: "composed", from_address: mailbox.send_as, mailbox_id: mailbox.id, sent_via: "gmail",
+        status: "composed", from_address: fromIdentity(mailbox)!.address, mailbox_id: mailbox.id, sent_via: "gmail",
       });
       await db.update("programme_messages", { id: i.message.id }, { outreach_email_id: row!.id });
     }
     emails.push({ id: row!.id, message_id: i.message.id, name: i.prospect.company, to: i.prospect.email ?? "", subject: i.subject, step: i.step });
   }
   return { emails, skipped, gap: PROGRAMME_GAP_SECONDS };
+}
+
+/**
+ * "Send at": queue the batch for the server to send at a UK time. Rows become `queued` with a send_at; the
+ * every-minute cron route sends one per sender per run, never closer than 2 minutes apart. The browser can be closed.
+ */
+export async function scheduleBatch(db: Phase1Db, user: Phase1User, messageIds: string[], sendAtIso: string, now = new Date()) {
+  const at = new Date(sendAtIso);
+  if (Number.isNaN(at.getTime())) throw new ActionError(400, "Pick a date and time");
+  if (at.getTime() < now.getTime() - 60_000) throw new ActionError(400, "That time has already passed");
+  if (at.getTime() > now.getTime() + 14 * 86_400_000) throw new ActionError(400, "At most 14 days ahead");
+  const q = await queueBatch(db, user, messageIds, now);
+  for (const e of q.emails) await db.update("outreach_emails", { id: e.id }, { status: "queued", send_at: at.toISOString() });
+  return { ...q, send_at: at.toISOString() };
+}
+
+export async function unscheduleBatch(db: Phase1Db, user: Phase1User, emailIds: string[]) {
+  let n = 0;
+  for (const id of emailIds) {
+    const e = (await db.select("outreach_emails", { eq: { id } }))[0];
+    if (e && e.status === "queued" && e.owner_id === user.personId) n += (await db.update("outreach_emails", { id, status: "queued" }, { status: "composed", send_at: null })).length;
+  }
+  return n;
 }
 
 export async function skipMessage(db: Phase1Db, messageId: string) {

@@ -1,6 +1,6 @@
 import { ActionError, recordSent, sentTodayCount } from "@/lib/phase1/actions";
 import { GmailApiError, GmailAuthError, buildMime, findAlias, listSendAs, sendRaw } from "@/lib/phase1/gmail";
-import { ReconnectError, accessTokenFor, findMailbox } from "@/lib/phase1/mailbox";
+import { ReconnectError, accessTokenFor, findMailbox, fromIdentity } from "@/lib/phase1/mailbox";
 import { DAILY_CAP } from "@/lib/phase1/send";
 import { errorResponse, getDb, requireUser } from "@/lib/phase1/supabase";
 
@@ -22,17 +22,18 @@ export async function POST(request: Request) {
     }
     const prospect = (await db.select("prospects", { eq: { id: e.prospect_id } }))[0];
     if (!prospect || prospect.status === "do_not_contact") throw new ActionError(409, "This business is marked do not contact");
-    const alias = m.send_as;
-    if (!alias) throw new ActionError(409, "No arepolabs address set for this mailbox");
+    const idn = fromIdentity({ ...m, send_as_verified: true });
+    if (!idn) throw new ActionError(409, "No arepolabs address set for this mailbox");
+    const alias = idn.address;
     try {
       const access = await accessTokenFor(db, m);
-      const found = findAlias(await listSendAs(access), alias);
+      const found = idn.alias ? findAlias(await listSendAs(access), alias) : { found: true, verified: true };
       if (!found.found || !found.verified) {
         await db.update("mailboxes", { id: m.id }, { send_as_verified: false });
         return Response.json({ error: `${alias} is not set up in Gmail as a verified "Send mail as" address`, alias: false }, { status: 409 });
       }
-      if (!m.send_as_verified) await db.update("mailboxes", { id: m.id }, { send_as_verified: true });
-      const mime = buildMime({ fromName: m.send_as_name ?? "Dayyan Sheikh", fromAddress: alias, to: e.to_address, subject: e.subject, body: e.body_rendered });
+      if (idn.alias && !m.send_as_verified) await db.update("mailboxes", { id: m.id }, { send_as_verified: true });
+      const mime = buildMime({ fromName: idn.name, fromAddress: alias, to: e.to_address, subject: e.subject, body: e.body_rendered });
       const sent = await sendRaw(access, mime.raw);
       const row = await recordSent(db, user, e.id, { via: "gmail", gmail_message_id: sent.id, gmail_thread_id: sent.threadId, rfc_message_id: mime.messageId });
       return Response.json({ ok: true, email: row });

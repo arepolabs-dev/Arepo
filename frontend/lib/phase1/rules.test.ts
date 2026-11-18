@@ -10,10 +10,10 @@ describe("checkSendable", () => {
     expect(checkSendable({ ...base, company_type: "sole_trader" }).blocked).toBe(true);
     expect(checkSendable({ ...base, company_type: "sole_trader", consent_recorded: true }).blocked).toBe(false);
   });
-  it("warns but does not block unknown", () => {
+  it("blocks unknown unless consent is recorded", () => {
     const r = checkSendable({ ...base, company_type: "unknown" });
-    expect(r.blocked).toBe(false);
-    expect(r.warnings).toContain("Check Companies House");
+    expect(r.blocked).toBe(true);
+    expect(checkSendable({ ...base, company_type: "unknown", consent_recorded: true }).blocked).toBe(false);
   });
   it("blocks a malformed address", () => expect(checkSendable({ ...base, public_email: "nope" }).blocked).toBe(true));
 });

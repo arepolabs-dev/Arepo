@@ -10,7 +10,7 @@ import { SESSION_COOKIE, sessionSecret, verifySessionAnyEmail } from "@/lib/phas
  */
 export const config = { matcher: ["/phase1/:path*"] };
 
-const PUBLIC_PREFIXES = ["/phase1/signin", "/phase1/enrol", "/phase1/api/auth/"];
+const PUBLIC_PREFIXES = ["/phase1/signin", "/phase1/enrol", "/phase1/api/auth/", "/phase1/api/cron/", "/phase1/api/admin/"];
 
 function isPublic(path: string): boolean {
   return PUBLIC_PREFIXES.some((p) => path === p.replace(/\/$/, "") || path.startsWith(p));

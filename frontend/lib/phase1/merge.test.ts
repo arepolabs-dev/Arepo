@@ -12,7 +12,8 @@ describe("renderEmail", () => {
     expect(r.body).toContain("Hi Sam,");
     expect(r.body).toContain("Loved the flat white. About Tani.");
     expect(r.body).toContain("\nJack");
-    expect(r.body.endsWith(OPT_OUT)).toBe(true);
+    expect(r.body).toContain(OPT_OUT);
+    expect(r.body.indexOf(OPT_OUT)).toBeLessThan(r.body.lastIndexOf("Jack"));
     expect(r.unresolved).toEqual([]);
   });
   it("falls back to Hi there and general opener", () => {
@@ -45,7 +46,8 @@ describe("helpers", () => {
   });
   it("appends the new fallback line when there is no opt-out", () => {
     const r = renderEmail({ prospect: p, subject: "s", body: "Hello.\n\nDayyan", sender: dayyan });
-    expect(r.body.endsWith("reply to this email and let me know.")).toBe(true);
+    expect(r.body).toContain("reply to this email and let me know.");
+    expect(r.body.indexOf("reply to this email")).toBeLessThan(r.body.lastIndexOf("Dayyan"));
     expect(hasOptOut("Hello there")).toBe(false);
   });
   it("accepts the old opt-out wording", () => expect(endsWithOptOut(`hi\n${OLD_OPT_OUT}\n`)).toBe(true));

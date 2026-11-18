@@ -8,6 +8,9 @@ import {
 } from "@/lib/phase1/programme";
 import { emailHtml } from "@/lib/phase1/signature";
 import { randomGapSeconds } from "@/lib/phase1/send";
+import { fromIdentity } from "@/lib/phase1/sender-identity";
+import { fmtUk, ukInputValue } from "@/lib/phase1/uktime";
+import type { Mailbox } from "@/lib/phase1/types";
 import type { Phase, ProgrammeMessage, ProgrammeProspect, Track } from "@/lib/phase1/types";
 import { usePhase1 } from "./data";
 import { GenerateLeads, NewLeads } from "./Leads";
@@ -53,6 +56,12 @@ export function PhasesHome() {
   useEffect(() => { setGmailNote(new URLSearchParams(window.location.search).get("gmail")); }, []);
 
   const prog = state?.programme;
+  const liveCount = state?.outreach_emails.filter((e) => e.status === "queued" || e.status === "sending").length ?? 0;
+  useEffect(() => {
+    if (!liveCount) return;
+    const t = setInterval(() => { void reload(); }, 10_000);
+    return () => clearInterval(t);
+  }, [liveCount, reload]);
   const me = senderKey(state?.me.name ?? state?.me.email);
   const voices = useMemo<Voice[]>(() => {
     if (!state || !prog) return [];
@@ -66,7 +75,10 @@ export function PhasesHome() {
       const t = prog.tracks.find((t) => senderKey(t.sender) === k);
       return (person?.name ?? t?.sender ?? cap(k)).split(/\s+/)[0]!;
     };
-    return keys.map((k) => ({ key: k, label: label(k) }));
+    const all = keys.map((k) => ({ key: k, label: label(k) }));
+    // Dayyan sees both tabs; anyone else (Jack) sees only their own.
+    const mine = senderKey(state.me.name ?? state.me.email);
+    return mine !== "dayyan" && all.some((v) => v.key === mine) ? all.filter((v) => v.key === mine) : all;
   }, [state, prog]);
   const current = tab ?? (voices.some((v) => v.key === me) ? me : voices[0]?.key ?? "");
   const own = current === me;
@@ -87,13 +99,14 @@ export function PhasesHome() {
   const today = londonToday(now);
   const voiceLabel = voices.find((v) => v.key === current)?.label ?? cap(current);
   const myBox = state.mailboxes.find((m) => m.kind === "personal" && m.owner_id === state.me.personId) ?? null;
-  const mailbox = myBox && myBox.status === "connected" && myBox.send_as_verified && myBox.send_as ? myBox : null;
+  const idn = myBox ? fromIdentity(myBox as unknown as Mailbox) : null;
+  const mailbox = myBox && myBox.status === "connected" && idn ? { ...myBox, send_as: idn.address } : null;
   /** Why Send cannot be used yet, in plain words (null when Gmail is ready). */
   const gmailReason: string | null = mailbox ? null :
     !state.gmail.configured ? "Gmail is not set up on this server yet" :
     !myBox ? "Connect Gmail first" :
     myBox.status !== "connected" ? "Reconnect Gmail first" :
-    "Gmail connected but the arepolabs address is not verified as Send mail as yet";
+    "Gmail connected but the sending address is not verified as Send mail as yet";
   const trackProspectIds = new Set(prog.prospects.filter(inTrack).map((p) => p.prospect_id).filter(Boolean) as string[]);
   const anyProgrammeIds = new Set(prog.prospects.map((p) => p.prospect_id).filter(Boolean) as string[]);
   const waiting = state.replies.filter(needsAnswer).filter((r) => (r.prospect_id && trackProspectIds.has(r.prospect_id)) || (own && !(r.prospect_id && anyProgrammeIds.has(r.prospect_id)))).sort((a, b) => b.received_at.localeCompare(a.received_at));
@@ -183,6 +196,21 @@ export function PhasesHome() {
             "Gmail is not set up on this server yet."
           ) : `${voiceLabel} sends these from their own Gmail. You can look, but only ${voiceLabel} can send from this tab.`}
         </p>
+        {(() => {
+          const mine = state.outreach_emails.filter((e) => e.owner_id === state.me.personId && (own || false));
+          const q = mine.filter((e) => e.status === "queued"), s = mine.filter((e) => e.status === "sending"), f = mine.filter((e) => e.status === "failed" && !!e.send_at);
+          const sentSched = mine.filter((e) => e.status === "sent" && !!e.send_at);
+          if (!q.length && !s.length && !f.length && !sentSched.length) return null;
+          const next = q.map((e) => e.send_at!).sort()[0];
+          return (
+            <div className="mt-3">
+              <Banner tone={f.length ? "warn" : "info"}>
+                Scheduled sends: {q.length} queued{next ? ` (next ${fmtUk(next)} UK)` : ""}, {s.length} sending, {sentSched.length} sent{f.length ? `, ${f.length} failed (${f[0]!.send_error ?? "see the row"})` : ""}. The server sends one every 2 minutes; you can close this page.
+              </Banner>
+              {q.length > 0 && <button className={`${btnCls} mt-2`} onClick={() => act("programme.unschedule", { email_ids: q.map((e) => e.id) }).catch((e) => setNote(String(e.message ?? e)))}>Cancel the {q.length} queued</button>}
+            </div>
+          );
+        })()}
         {progress && (
           <div className="mt-3">
             <Banner tone={failed ? "warn" : "info"}>{running ? `Sending: ${done} done${failed ? `, ${failed} failed` : ""}${countdown ? `, next in ${countdown}s` : ""}. Keep this page open.` : `Finished: ${done} sent${failed ? `, ${failed} failed` : ""}.`}</Banner>
@@ -203,7 +231,7 @@ export function PhasesHome() {
                 <PhaseCard key={ph.phase_id} phase={ph} voice={current} voices={voices} own={own} sendAs={mailbox?.send_as ?? null} gmailReason={gmailReason} today={today}
                   prospects={prog.prospects.filter((p) => p.phase_id === ph.phase_id && inTrack(p))} messages={prog.messages} tracks={prog.tracks} phases={prog.phases}
                   batch={batch.filter((i) => i.prospect.phase_id === ph.phase_id)} result={computePhaseResult(ph, facts, now)}
-                  unticked={unticked} toggle={toggle} ticked={ticked} busy={running} progress={progress} onSend={send}
+                  unticked={unticked} toggle={toggle} ticked={ticked} busy={running} progress={progress} onSend={send} onSchedule={async (ids, at) => { try { const r = await act<{ emails: unknown[]; skipped: { reason: string }[] }>("programme.schedule", { message_ids: ids, send_at_uk: at }); setNote(`${r.emails.length} email${r.emails.length === 1 ? "" : "s"} queued for ${at.replace("T", " ")} UK time${r.skipped.length ? `; ${r.skipped.length} skipped: ${r.skipped.map((x) => x.reason).slice(0, 2).join("; ")}` : ""}`); } catch (e) { setNote(e instanceof Error ? e.message : "Could not schedule"); } }}
                   onAccept={() => act("phase.accept", { phase_id: ph.phase_id }).catch((e) => setNote(String(e.message ?? e)))} />
               ))}
             </div>
@@ -245,15 +273,21 @@ export function PhasesHome() {
   );
 }
 
-function PhaseCard({ phase, voice, voices, own, sendAs, gmailReason, today, prospects, messages, tracks, phases, batch, result, unticked, toggle, ticked, busy, progress, onSend, onAccept }: {
+function PhaseCard({ phase, voice, voices, own, sendAs, gmailReason, today, prospects, messages, tracks, phases, batch, result, unticked, toggle, ticked, busy, progress, onSend, onSchedule, onAccept }: {
   phase: Phase; voice: string; voices: Voice[]; own: boolean; sendAs: string | null; gmailReason: string | null; today: string;
   prospects: ProgrammeProspect[]; messages: ProgrammeMessage[]; tracks: Track[]; phases: Phase[]; batch: BatchItem[]; result: PhaseResult;
   unticked: Set<string>; toggle: (id: string) => void; ticked: (ids: string[]) => string[]; busy: boolean; progress: Progress | null;
-  onSend: (ids: string[]) => void; onAccept: () => void;
+  onSend: (ids: string[]) => void; onSchedule: (ids: string[], atUk: string) => void; onAccept: () => void;
 }) {
   const [show, setShow] = useState<"preview" | "recipients" | null>(null);
   const [confirm, setConfirm] = useState<"first" | "followup" | null>(null);
   const [pick, setPick] = useState<Record<string, string>>({});
+  const [sendAt, setSendAt] = useState(() => ukInputValue(new Date(Date.now() + 3_600_000)));
+  const sentRows = messages.filter((m) => m.status === "sent" && prospects.some((p) => p.ext_id === m.prospect_ext_id)).sort((a, b) => (a.sent_at ?? "").localeCompare(b.sent_at ?? ""));
+  const pendingHere = messages.some((m) => m.status === "pending" && prospects.some((p) => p.ext_id === m.prospect_ext_id) && messageVoice(m, prospects.find((p) => p.ext_id === m.prospect_ext_id)!, tracks) === voice);
+  // A phase whose emails have all gone out is collapsed by default (the list of what was sent stays one click away).
+  const [open, setOpen] = useState(!(phase.status === "judged" || (sentRows.length > 0 && !pendingHere)));
+  const [showSent, setShowSent] = useState(false);
   const label = (k: string | null) => (k ? voices.find((v) => v.key === k)?.label ?? cap(k) : "");
   const keys = variantKeys(phase);
   const variants = phase.variants && typeof phase.variants === "object" ? (phase.variants as Record<string, unknown>) : {};
@@ -309,8 +343,32 @@ function PhaseCard({ phase, voice, voices, own, sendAs, gmailReason, today, pros
         <span className="font-medium text-arepo-ink">{phase.phase_id}: {phase.variable ?? "Phase"}</span>
         <Pill tone={TONE[phase.status]}>{phase.status}</Pill>
         {phase.judge_on && <span className="text-arepo-muted">judged {fmtDay(phase.judge_on)}</span>}
+        {sentRows.length > 0 && <span className="text-arepo-muted">{sentRows.length} sent</span>}
+        <button className={`${btnCls} ml-auto`} aria-expanded={open} onClick={() => setOpen(!open)}>{open ? "Collapse" : "Show"}</button>
       </div>
-      {keys.length > 0 && (
+      {planned && (
+        <p className="mt-1 text-arepo-muted">
+          {phase.depends_on ? `Depends on Phase ${phase.depends_on} results${phase.depends_inferred ? " (inferred from the phase order; the plan has no data for this)" : ""}.` : null}
+          {phase.starts_on ? ` Starts ${fmtDay(phase.starts_on)}.` : null}
+          {!phase.depends_on && !phase.starts_on ? "Starts once the earlier phases are judged (inferred from the phase order)." : null}
+          {" Not sendable until then."}
+        </p>
+      )}
+      {!planned && phase.starts_on && phase.starts_on > today && <p className="mt-1 text-arepo-muted">Starts {fmtDay(phase.starts_on)}.</p>}
+      {sentRows.length > 0 && (
+        <div className="mt-2">
+          <button className="text-xs underline" onClick={() => setShowSent(!showSent)} aria-expanded={showSent}>{showSent ? "Hide" : "Show"} the {sentRows.length} sent email{sentRows.length === 1 ? "" : "s"}</button>
+          {showSent && (
+            <ul className="mt-1 divide-y divide-arepo-border text-xs">
+              {sentRows.map((m) => { const p = prospects.find((x) => x.ext_id === m.prospect_ext_id)!; return (
+                <li key={m.id} className="flex flex-wrap gap-2 py-1"><span className="font-medium text-arepo-ink">{p.company}</span><span className="text-arepo-muted">{STEP_LABEL[m.step]} to {p.email}</span><span className="ml-auto text-arepo-muted">{m.sent_at ? `${fmtUk(m.sent_at)} UK` : fmtDay(m.send_on)}</span></li>
+              ); })}
+            </ul>
+          )}
+        </div>
+      )}
+      {open && <>
+      {open && keys.length > 0 && (
         <p className="mt-1 text-arepo-ink2">
           {keys.map((k, i) => <span key={k}>{i > 0 ? " vs " : ""}<span className="font-medium">{k}:</span> {variantText(variants[k])}</span>)}
           {phase.hypothesis ? <span className="text-arepo-muted"> ({phase.hypothesis})</span> : null}
@@ -330,9 +388,15 @@ function PhaseCard({ phase, voice, voices, own, sendAs, gmailReason, today, pros
       {confirm && (
         <div className="mt-3 rounded-control border border-arepo-border bg-arepo-surface2 p-3">
           <p className="text-arepo-ink">Send {confirm === "first" ? nFirst : nFollow} {confirm === "first" ? "email" : "follow-up"}{(confirm === "first" ? nFirst : nFollow) === 1 ? "" : "s"} from {sendAs}? They go one at a time with a short pause, each with the opt-out line.</p>
-          <div className="mt-2 flex gap-2">
-            <button className={btnPrimary} onClick={() => { setConfirm(null); onSend(ticked(confirm === "first" ? firsts : followups)); }}>Yes, send</button>
+          <div className="mt-2 flex flex-wrap gap-2">
+            <button className={btnPrimary} onClick={() => { setConfirm(null); onSend(ticked(confirm === "first" ? firsts : followups)); }}>Yes, send now (keep this page open)</button>
             <button className={btnCls} onClick={() => setConfirm(null)}>Not now</button>
+          </div>
+          <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-arepo-border pt-3">
+            <label className="text-arepo-ink2" htmlFor={`send-at-${phase.phase_id}`}>Send at (UK time)</label>
+            <input id={`send-at-${phase.phase_id}`} type="datetime-local" className={`${inputCls} py-1`} value={sendAt} onChange={(e) => setSendAt(e.target.value)} />
+            <button className={btnPrimary} disabled={!sendAt} onClick={() => { setConfirm(null); onSchedule(ticked(confirm === "first" ? firsts : followups), sendAt); }}>Schedule on the server</button>
+            <span className="w-full text-xs text-arepo-muted">The server sends them one at a time, 2 minutes apart, from that time. You can close this page.</span>
           </div>
         </div>
       )}
@@ -394,6 +458,7 @@ function PhaseCard({ phase, voice, voices, own, sendAs, gmailReason, today, pros
         </ul>
       )}
 
+      </>}
       <p className="mt-3 text-xs text-arepo-muted">
         {result.rows.map((r, i) => <span key={r.key}>{i > 0 ? " · " : ""}{r.key}: {r.sent} sent, {r.replied} replied, {r.positive} positive{r.calls ? `, ${r.calls} calls` : ""}</span>)}
         {phase.status === "judged" ? ` · Winner: ${phase.winner === "none" || !phase.winner ? "no clear winner" : phase.winner}` : phase.status === "active" || result.due ? ` · ${result.summary}` : ""}

@@ -8,7 +8,7 @@
 /** The 1 primary booking button (hero) points here. */
 export const CALENDLY = "https://calendly.com/dayyan-sheikh-arepolabs/30min";
 // TODO: Jack's Calendly link. While empty, Contact shows only his email (Dayyan, 15 Nov).
-export const JACK_CALENDLY = "";
+export const JACK_CALENDLY = "https://calendly.com/jackburbridge72/30min";
 /** General enquiries: the 1 address in the hero "or email" line and the main Contact email. */
 export const EMAIL_GENERAL = "enquiries@arepolabs.com";
 export const EMAIL = "dayyan.sheikh@arepolabs.com";

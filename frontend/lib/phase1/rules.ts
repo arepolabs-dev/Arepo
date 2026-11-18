@@ -41,7 +41,7 @@ export function checkSendable(p: RuleProspect): SendCheck {
   if ((p.company_type === "sole_trader" || p.company_type === "partnership") && !p.consent_recorded) {
     reasons.push("Sole trader or partnership: needs consent first");
   }
-  if (p.company_type === "unknown" && !p.consent_recorded) warnings.push("Check Companies House");
+  if (p.company_type === "unknown" && !p.consent_recorded) reasons.push("Not confirmed as a limited company: check Companies House or record consent");
   if (p.status !== "prospect" && p.status !== "do_not_contact") warnings.push(`Already ${p.status.replace("_", " ")}`);
   return { blocked: reasons.length > 0, reasons, warnings };
 }

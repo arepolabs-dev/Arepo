@@ -16,6 +16,8 @@ export async function findMailbox(db: Phase1Db, user: Phase1User, id: string): P
   return m;
 }
 
+export { OWN_GMAIL_SENDERS, fromIdentity, sendsFromOwnGmail } from "./sender-identity";
+
 export class ReconnectError extends Error {
   constructor(public mailboxId: string) {
     super("Reconnect Gmail");

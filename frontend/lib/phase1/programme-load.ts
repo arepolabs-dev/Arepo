@@ -12,7 +12,14 @@ type J = Record<string, unknown>;
 const obj = (v: unknown): J => (v && typeof v === "object" && !Array.isArray(v) ? (v as J) : {});
 const list = (v: unknown): J[] => (Array.isArray(v) ? v.filter((x) => x && typeof x === "object").map((x) => x as J) : []);
 const str = (v: unknown): string | null => (typeof v === "string" && v.trim() ? v.trim() : typeof v === "number" ? String(v) : null);
-const int = (v: unknown, d = 0): number => (typeof v === "number" && Number.isFinite(v) ? Math.round(v) : typeof v === "string" && /^\d+$/.test(v.trim()) ? Number(v) : d);
+const int = (v: unknown, d = 0): number => (typeof v === "number" && Number.isFinite(v) ? Math.round(v) : typeof v === "string" && /^\d+/.test(v.trim()) ? Number(/^\d+/.exec(v.trim())![0]) : d);
+const nameKey = (s: string | null | undefined): string => (s ?? "").toLowerCase().replace(/&/g, "and").replace(/\b(ltd|limited|llp|plc)\b/g, "").replace(/[^a-z0-9]/g, "");
+const TYPES = new Set(["ltd", "llp", "plc", "sole_trader", "partnership", "individual", "not_company", "dissolved", "unclear"]);
+/** The "Limited company?" value: only an exact, checked token counts; anything else is "not checked" (null). */
+const typeOf = (v: unknown): string | null => { const s = (str(v) ?? "").toLowerCase(); return TYPES.has(s) ? s : null; };
+/** The older core-table value that drives the send gate: ltd, llp, plc count as limited; a checked non-company is sole_trader. */
+const coreType = (t: string | null): "ltd" | "llp" | "sole_trader" | "partnership" | "unknown" =>
+  t === "ltd" || t === "plc" ? "ltd" : t === "llp" ? "llp" : t === "partnership" ? "partnership" : t === "sole_trader" || t === "individual" || t === "not_company" ? "sole_trader" : "unknown";
 const strList = (v: unknown): string[] => (Array.isArray(v) ? v.map((x) => String(x).trim()).filter(Boolean) : typeof v === "string" ? v.split(/[;,|\n]/).map((x) => x.trim()).filter(Boolean) : []);
 const first = (o: J, ...keys: string[]): unknown => keys.map((k) => o[k]).find((v) => v !== undefined && v !== null && v !== "");
 
@@ -101,6 +108,7 @@ export async function loadProgramme(db: Phase1Db, json: unknown, opts: LoadOptio
     const base: Insert<"phases"> = {
       phase_id, track_key: trackOf(p.track), ord: int(first(p, "order", "ord")), variable: str(p.variable), hypothesis: str(p.hypothesis),
       variants: variantsMap(p.variants), send_days: strList(p.send_days), followup_days: strList(p.followup_days),
+      depends_on: str(p.depends_on), depends_inferred: p.depends_inferred === true, starts_on: str(p.starts_on),
       judge_on: str(p.judge_on), winner_rule: str(p.winner_rule), min_sample: int(p.min_sample),
       on_a_wins: str(p.on_A_wins ?? p.on_a_wins), on_b_wins: str(p.on_B_wins ?? p.on_b_wins), on_c_wins: str(p.on_C_wins ?? p.on_c_wins), on_no_signal: str(p.on_no_signal),
     };
@@ -119,6 +127,7 @@ export async function loadProgramme(db: Phase1Db, json: unknown, opts: LoadOptio
   const byExt = new Map(progs.map((p) => [p.ext_id, p]));
   const byEmail = new Map(progs.filter((p) => p.email_norm).map((p) => [p.email_norm!, p]));
   const byDomain = new Map(progs.filter((p) => p.domain_norm).map((p) => [p.domain_norm!, p]));
+  const byName = new Map(progs.map((p) => [nameKey(p.company), p]));
   for (const p of list(root.prospects)) {
     const ext = str(first(p, "id", "ext_id"));
     const company = str(first(p, "company", "name"));
@@ -131,7 +140,7 @@ export async function loadProgramme(db: Phase1Db, json: unknown, opts: LoadOptio
     const domainN = normDomain(str(p.website), email);
     const existing = byExt.get(ext);
     if (!existing) {
-      const dup = (emailN && byEmail.get(emailN)) || (domainN && byDomain.get(domainN)) || null;
+      const dup = (emailN && byEmail.get(emailN)) || (domainN && byDomain.get(domainN)) || (nameKey(company) && byName.get(nameKey(company))) || null;
       if (dup) {
         report.prospects.duplicates.push({ ext_id: ext, of: dup.ext_id });
         continue;
@@ -142,12 +151,13 @@ export async function loadProgramme(db: Phase1Db, json: unknown, opts: LoadOptio
       track_key: trackOf(p.track), phase_id: str(p.phase_id), variant: str(p.variant), segment: str(p.segment), area_kind: areaKind(p.area), company,
       contact_name: contact, email, website: str(p.website), what_they_do: str(p.what_they_do), hook: str(p.hook), source: str(p.source), send_slot: str(p.send_slot),
       email_norm: emailN, domain_norm: domainN,
+      company_type: typeOf(p.company_type), ch_number: str(p.ch_number), walk_in: p.walk_in === true,
     };
     if (existing) {
       // Never reset status or request_id.
       await db.update("programme_prospects", { ext_id: ext }, detail);
       if (existing.prospect_id) {
-        await db.update("prospects", { id: existing.prospect_id }, { name: company, website: detail.website, public_email: email, first_name: contact?.split(/\s+/)[0] ?? null, why_fit: detail.what_they_do, opener_specific: detail.hook, vertical: detail.segment });
+        await db.update("prospects", { id: existing.prospect_id }, { company_type: coreType(detail.company_type), companies_house_no: detail.ch_number, name: company, website: detail.website, public_email: email, first_name: contact?.split(/\s+/)[0] ?? null, why_fit: detail.what_they_do, opener_specific: detail.hook, vertical: detail.segment });
       }
       report.prospects.updated++;
       continue;
@@ -155,10 +165,9 @@ export async function loadProgramme(db: Phase1Db, json: unknown, opts: LoadOptio
     // A core row already on this email (an earlier hand-made prospect) is reused, not duplicated.
     let core: Row<"prospects"> | undefined = emailN ? cores.find((c) => normEmail(c.public_email) === emailN) : undefined;
     if (!core) {
-      const ct = str(p.company_type);
       [core] = await db.insert("prospects", {
         name: company, vertical: detail.segment, website: detail.website, public_email: email, email_found: !!email, channel: "email",
-        company_type: ct === "ltd" || ct === "llp" || ct === "sole_trader" || ct === "partnership" ? ct : "unknown",
+        company_type: coreType(detail.company_type), companies_house_no: detail.ch_number,
         first_name: contact?.split(/\s+/)[0] ?? null, why_fit: detail.what_they_do, opener_specific: detail.hook, source_doc: "notes",
       });
       cores.push(core!);
@@ -166,6 +175,7 @@ export async function loadProgramme(db: Phase1Db, json: unknown, opts: LoadOptio
     const status = str(p.status) ?? (opts.requestId ? "new" : "ready");
     const [made] = await db.insert("programme_prospects", { ext_id: ext, prospect_id: core?.id ?? null, status, request_id: opts.requestId ?? null, ...detail });
     byExt.set(ext, made!);
+    byName.set(nameKey(company), made!);
     if (emailN) byEmail.set(emailN, made!);
     if (domainN) byDomain.set(domainN, made!);
     report.prospects.added++;

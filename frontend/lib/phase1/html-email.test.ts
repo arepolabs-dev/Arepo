@@ -26,7 +26,7 @@ describe("bodyToHtml", () => {
     const t = "See https://example.com/a?x=1&y=2\n\nIf you'd rather not hear from me, reply to this email and let me know.\n\nKind regards,\nDayyan Sheikh\nArepo Labs";
     const h = bodyToHtml(t);
     expect(h).toContain("https://example.com/a?x=1&amp;y=2");
-    expect(h).toContain("<p>If you'd rather not hear from me, reply to this email and let me know.</p>".replace("'", "&#39;"));
+    expect(h).toContain(`<p style="margin:0 0 14px;color:#6b6b6b;font-size:13px;">If you'd rather not hear from me, reply to this email and let me know.</p>`.replace("'", "&#39;"));
     expect(h).toContain("Kind regards,<br>\nDayyan Sheikh<br>\nArepo Labs</p>");
   });
   it("falls back to plain escaped text with no link", () => expect(bodyToHtml("Hello")).toBe("<div><p>Hello</p></div>"));

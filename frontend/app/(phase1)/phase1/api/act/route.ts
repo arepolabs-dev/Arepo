@@ -2,7 +2,9 @@ import {
   ActionError, cancelComposed, classifyReply, composeEmails, createProspect, importProspects, recordSent,
   saveVariant, setStatus, updateProspect, type ComposeItem,
 } from "@/lib/phase1/actions";
-import { acceptPhase, queueBatch, requestLeads, reviewLead, setReplyCategory, skipMessage } from "@/lib/phase1/programme-actions";
+import { fromIdentity } from "@/lib/phase1/mailbox";
+import { ukLocalToIso } from "@/lib/phase1/uktime";
+import { acceptPhase, queueBatch, scheduleBatch, unscheduleBatch, requestLeads, reviewLead, setReplyCategory, skipMessage } from "@/lib/phase1/programme-actions";
 import { findMailbox } from "@/lib/phase1/mailbox";
 import { errorResponse, getDb, requireUser } from "@/lib/phase1/supabase";
 import type { ProspectStatus, ReplyType } from "@/lib/phase1/types";
@@ -40,7 +42,7 @@ export async function POST(request: Request) {
         if (via === "gmail") {
           const m = await findMailbox(db, user, str("mailbox_id"));
           mailboxId = m.id;
-          from = m.send_as;
+          from = fromIdentity({ ...m, send_as_verified: true })?.address ?? m.send_as;
         }
         return Response.json(await composeEmails(db, user, (b.items ?? []) as ComposeItem[], via, from, mailboxId));
       }
@@ -56,6 +58,10 @@ export async function POST(request: Request) {
         return Response.json({ reply: await classifyReply(db, user, str("id"), str("type") as ReplyType) });
       case "programme.queue":
         return Response.json(await queueBatch(db, user, ((b.message_ids ?? []) as unknown[]).map(String)));
+      case "programme.schedule":
+        return Response.json(await scheduleBatch(db, user, ((b.message_ids ?? []) as unknown[]).map(String), ukLocalToIso(str("send_at_uk")) ?? ""));
+      case "programme.unschedule":
+        return Response.json({ cancelled: await unscheduleBatch(db, user, ((b.email_ids ?? []) as unknown[]).map(String)) });
       case "programme.skip":
         return Response.json(await skipMessage(db, str("message_id")));
       case "phase.accept":

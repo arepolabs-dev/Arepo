@@ -3,13 +3,13 @@
  * against the playbook, computing a phase's result and the numbers behind the scoreboard. No database, no
  * network: everything takes plain rows so it is easy to test.
  */
-import { findUnresolved } from "./merge";
-import { isValidEmail } from "./rules";
+import { findUnresolved, placeOptOut } from "./merge";
+import { checkSendable, isValidEmail, type RuleProspect } from "./rules";
 import type {
   EventRow, MessageStep, Phase, ProgrammeMessage, ProgrammeProspect, Reply, ReplyPlaybook, Row, Track,
 } from "./types";
 
-type Core = Pick<Row<"prospects">, "id" | "status">;
+type Core = Pick<Row<"prospects">, "id" | "status"> & Partial<Pick<Row<"prospects">, "company_type" | "public_email" | "consent_recorded">>;
 
 // ---------------------------------------------------------------- keys
 
@@ -143,6 +143,7 @@ export function renderMessage(m: Pick<ProgrammeMessage, "subject" | "body" | "te
     subject = fillTemplate(subject, ctx);
     body = fillTemplate(body, ctx);
   }
+  body = placeOptOut(body);
   return { subject, body, unresolved: unresolvedIn(`${subject}\n${body}`) };
 }
 
@@ -177,6 +178,10 @@ export function selectBatch(input: BatchInput): BatchItem[] {
     if (!isValidEmail(p.email)) continue;
     const phase = p.phase_id ? phaseById.get(p.phase_id) ?? null : null;
     if (phase && phase.status === "planned") continue;
+    // A phase also waits for its start date, and the person must be a confirmed limited company (or have consented).
+    if (phase?.starts_on && phase.status !== "active" && phase.starts_on > today) continue;
+    if (p.walk_in && !core?.consent_recorded) continue; // walk-in / card only, unless consent has been given
+    if (core && core.company_type !== undefined && checkSendable(core as unknown as RuleProspect).blocked) continue;
     const idx = STEP_ORDER.indexOf(m.step);
     if (idx > 0) {
       // A follow-up continues the thread of whoever sent the first email: same voice only.

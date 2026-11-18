@@ -37,7 +37,7 @@ export type TestVariable =
   | "length"
   | "send_time"
   | "follow_up";
-export type OutreachStatus = "composed" | "sent" | "bounced" | "replied" | "stopped";
+export type OutreachStatus = "composed" | "queued" | "sending" | "sent" | "bounced" | "replied" | "stopped" | "failed";
 export type ReplyType =
   | "unclassified"
   | "positive"
@@ -166,6 +166,9 @@ export interface OutreachEmail {
   from_address: string | null;
   sent_via: "gmail" | "manual" | null;
   send_error: string | null;
+  /** When the server may send this queued email. */
+  send_at?: Iso | null;
+  attempted_at?: Iso | null;
 }
 
 export interface Reply {
@@ -267,13 +270,18 @@ export interface Phase {
   variants: Record<string, unknown> | null; send_days: string[] | null; followup_days: string[] | null;
   judge_on: string | null; winner_rule: string | null; min_sample: number;
   on_a_wins: string | null; on_b_wins: string | null; on_c_wins: string | null; on_no_signal: string | null;
+  /** Phase whose result this one waits for (inferred from phase order when the plan has no data). */
+  depends_on?: string | null; depends_inferred?: boolean; starts_on?: string | null;
   status: PhaseStatus; winner: string | null; judged_at: Iso | null; result: Record<string, unknown> | null; created_at: Iso;
 }
 export interface ProgrammeProspect {
   id: Uuid; ext_id: string; prospect_id: Uuid | null; track_key: string; phase_id: string | null; variant: string | null;
   segment: string | null; area_kind: "local" | "non_local" | null; company: string; contact_name: string | null;
   email: string | null; website: string | null; what_they_do: string | null; hook: string | null; source: string | null;
-  send_slot: string | null; status: string; request_id: Uuid | null; email_norm: string | null; domain_norm: string | null; created_at: Iso;
+  send_slot: string | null;
+  /** ltd | llp | plc | sole_trader | partnership | individual | not_company | dissolved | unclear | null (not checked). */
+  company_type?: string | null; ch_number?: string | null; walk_in?: boolean;
+  status: string; request_id: Uuid | null; email_norm: string | null; domain_norm: string | null; created_at: Iso;
 }
 export type MessageStep = "first" | "followup1" | "followup2";
 export interface ProgrammeMessage {

@@ -59,7 +59,7 @@ const isOptOut = (p: string) => /^if you'd rather not hear from me/i.test(p.trim
 
 export function bodyToHtml(body: string, opts: { styled?: boolean } = {}): string {
   const paras = body.replace(/\r\n/g, "\n").replace(/\s+$/, "").split(/\n{2,}/);
-  if (!opts.styled) return `<div>${paras.map((p) => `<p>${inline(p)}</p>`).join("\n")}</div>`;
+  if (!opts.styled) return `<div>${paras.map((p) => (isOptOut(p) ? `<p style="${OPT_OUT_STYLE}">${inline(p)}</p>` : `<p>${inline(p)}</p>`)).join("\n")}</div>`;
   const ps = paras.map((p, i) => {
     const style = isOptOut(p) ? OPT_OUT_STYLE : i === paras.length - 1 ? "margin:0;" : P_STYLE;
     return `<p style="${style}">${inline(p, true)}</p>`;
