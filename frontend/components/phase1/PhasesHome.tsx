@@ -223,12 +223,15 @@ export function PhasesHome() {
       {myTracks.map((t) => {
         const phases = prog.phases.filter((p) => p.track_key === t.key).sort((a, b) => a.ord - b.ord);
         if (!phases.length) return null;
+        // Only the next phase that is due (or, failing that, the first live one) starts open; the rest start folded.
+        const live = phases.filter((x) => x.status !== "planned" && x.status !== "judged");
+        const openId = (live.find((x) => batch.some((i) => i.prospect.phase_id === x.phase_id)) ?? live[0])?.phase_id ?? null;
         return (
           <section key={t.key} aria-label={t.name}>
             <h2 className="font-display text-lg text-arepo-ink">{t.name}</h2>
             <div className="mt-3 space-y-4">
               {phases.map((ph) => (
-                <PhaseCard key={ph.phase_id} phase={ph} voice={current} voices={voices} own={own} sendAs={mailbox?.send_as ?? null} gmailReason={gmailReason} today={today}
+                <PhaseCard key={ph.phase_id} phase={ph} defaultOpen={ph.phase_id === openId} storeKey={`phase1.open.${state.me.personId ?? state.me.email ?? "me"}.${current}.${t.key}.${ph.phase_id}`} voice={current} voices={voices} own={own} sendAs={mailbox?.send_as ?? null} gmailReason={gmailReason} today={today}
                   prospects={prog.prospects.filter((p) => p.phase_id === ph.phase_id && inTrack(p))} messages={prog.messages} tracks={prog.tracks} phases={prog.phases}
                   batch={batch.filter((i) => i.prospect.phase_id === ph.phase_id)} result={computePhaseResult(ph, facts, now)}
                   unticked={unticked} toggle={toggle} ticked={ticked} busy={running} progress={progress} onSend={send} onSchedule={async (ids, at) => { try { const r = await act<{ emails: unknown[]; skipped: { reason: string }[] }>("programme.schedule", { message_ids: ids, send_at_uk: at }); setNote(`${r.emails.length} email${r.emails.length === 1 ? "" : "s"} queued for ${at.replace("T", " ")} UK time${r.skipped.length ? `; ${r.skipped.length} skipped: ${r.skipped.map((x) => x.reason).slice(0, 2).join("; ")}` : ""}`); } catch (e) { setNote(e instanceof Error ? e.message : "Could not schedule"); } }}
@@ -273,8 +276,8 @@ export function PhasesHome() {
   );
 }
 
-function PhaseCard({ phase, voice, voices, own, sendAs, gmailReason, today, prospects, messages, tracks, phases, batch, result, unticked, toggle, ticked, busy, progress, onSend, onSchedule, onAccept }: {
-  phase: Phase; voice: string; voices: Voice[]; own: boolean; sendAs: string | null; gmailReason: string | null; today: string;
+function PhaseCard({ phase, defaultOpen, storeKey, voice, voices, own, sendAs, gmailReason, today, prospects, messages, tracks, phases, batch, result, unticked, toggle, ticked, busy, progress, onSend, onSchedule, onAccept }: {
+  phase: Phase; defaultOpen: boolean; storeKey: string; voice: string; voices: Voice[]; own: boolean; sendAs: string | null; gmailReason: string | null; today: string;
   prospects: ProgrammeProspect[]; messages: ProgrammeMessage[]; tracks: Track[]; phases: Phase[]; batch: BatchItem[]; result: PhaseResult;
   unticked: Set<string>; toggle: (id: string) => void; ticked: (ids: string[]) => string[]; busy: boolean; progress: Progress | null;
   onSend: (ids: string[]) => void; onSchedule: (ids: string[], atUk: string) => void; onAccept: () => void;
@@ -284,9 +287,12 @@ function PhaseCard({ phase, voice, voices, own, sendAs, gmailReason, today, pros
   const [pick, setPick] = useState<Record<string, string>>({});
   const [sendAt, setSendAt] = useState(() => ukInputValue(new Date(Date.now() + 3_600_000)));
   const sentRows = messages.filter((m) => m.status === "sent" && prospects.some((p) => p.ext_id === m.prospect_ext_id)).sort((a, b) => (a.sent_at ?? "").localeCompare(b.sent_at ?? ""));
-  const pendingHere = messages.some((m) => m.status === "pending" && prospects.some((p) => p.ext_id === m.prospect_ext_id) && messageVoice(m, prospects.find((p) => p.ext_id === m.prospect_ext_id)!, tracks) === voice);
-  // A phase whose emails have all gone out is collapsed by default (the list of what was sent stays one click away).
-  const [open, setOpen] = useState(!(phase.status === "judged" || (sentRows.length > 0 && !pendingHere)));
+  // Folded unless it is the next phase due; the choice is remembered per user in this browser.
+  const [open, setOpenState] = useState(defaultOpen);
+  useEffect(() => {
+    try { const v = window.localStorage.getItem(storeKey); if (v === "1" || v === "0") setOpenState(v === "1"); } catch { /* storage unavailable */ }
+  }, [storeKey]);
+  const setOpen = (v: boolean) => { setOpenState(v); try { window.localStorage.setItem(storeKey, v ? "1" : "0"); } catch { /* storage unavailable */ } };
   const [showSent, setShowSent] = useState(false);
   const label = (k: string | null) => (k ? voices.find((v) => v.key === k)?.label ?? cap(k) : "");
   const keys = variantKeys(phase);
@@ -339,13 +345,18 @@ function PhaseCard({ phase, voice, voices, own, sendAs, gmailReason, today, pros
 
   return (
     <article className="rounded-card border border-arepo-border bg-white p-4 text-sm">
-      <div className="flex flex-wrap items-center gap-2">
+      <button type="button" className="flex w-full flex-wrap items-center gap-2 text-left" aria-expanded={open} aria-label={`Phase ${phase.phase_id}`} onClick={() => setOpen(!open)}>
+        <span aria-hidden className="w-3 text-arepo-muted">{open ? "▾" : "▸"}</span>
         <span className="font-medium text-arepo-ink">{phase.phase_id}: {phase.variable ?? "Phase"}</span>
         <Pill tone={TONE[phase.status]}>{phase.status}</Pill>
-        {phase.judge_on && <span className="text-arepo-muted">judged {fmtDay(phase.judge_on)}</span>}
-        {sentRows.length > 0 && <span className="text-arepo-muted">{sentRows.length} sent</span>}
-        <button className={`${btnCls} ml-auto`} aria-expanded={open} onClick={() => setOpen(!open)}>{open ? "Collapse" : "Show"}</button>
-      </div>
+        <span className="text-arepo-muted">
+          {planned
+            ? (phase.depends_on ? `Depends on Phase ${phase.depends_on}` : phase.starts_on ? `Starts ${fmtDay(phase.starts_on)}` : "Depends on the earlier phases")
+            : phase.judge_on ? `judged ${fmtDay(phase.judge_on)}` : phase.starts_on ? `${phase.starts_on > today ? "Starts" : "Started"} ${fmtDay(phase.starts_on)}` : ""}
+        </span>
+        <span className="ml-auto text-arepo-muted">{prospects.length} recipient{prospects.length === 1 ? "" : "s"}{sentRows.length > 0 ? ` · ${sentRows.length} sent` : ""}</span>
+      </button>
+      {open && <>
       {planned && (
         <p className="mt-1 text-arepo-muted">
           {phase.depends_on ? `Depends on Phase ${phase.depends_on} results${phase.depends_inferred ? " (inferred from the phase order; the plan has no data for this)" : ""}.` : null}
@@ -367,8 +378,7 @@ function PhaseCard({ phase, voice, voices, own, sendAs, gmailReason, today, pros
           )}
         </div>
       )}
-      {open && <>
-      {open && keys.length > 0 && (
+      {keys.length > 0 && (
         <p className="mt-1 text-arepo-ink2">
           {keys.map((k, i) => <span key={k}>{i > 0 ? " vs " : ""}<span className="font-medium">{k}:</span> {variantText(variants[k])}</span>)}
           {phase.hypothesis ? <span className="text-arepo-muted"> ({phase.hypothesis})</span> : null}
