@@ -509,3 +509,24 @@ describe("input-coverage monitor", () => {
     expect(html).toContain("book bk_has: all zero");
   });
 });
+
+describe("refit cost and new-challenger gate", () => {
+  it("shows the refit wall, peak memory and the declared gate verdict", () => {
+    const html = render(buildSignalEngineFixture(NOW));
+    expect(html).toContain('data-testid="se-refit-cost"');
+    expect(html).toContain("9,800 s wall, peak 5,900 MB of 6,500");
+    expect(html).toContain("New-challenger gate: 11,900 s of 12,000 s (refit + 1.5 x champion fit),");
+    expect(html).toContain("passes");
+  });
+
+  it("says fails when the gate load is over, and omits the gate for a resumed run", () => {
+    const block = buildSignalEngineFixture(NOW) as SignalEngineBlock;
+    const failing = { ...block, last_refit: { ...block.last_refit, gate_load_s: 12_680, gate_pass: false } };
+    expect(render(failing)).toContain("12,680 s of 12,000 s (refit + 1.5 x champion fit), fails");
+    const { gate_load_s: _g, gate_pass: _p, ...rest } = block.last_refit ?? {};
+    const resumed = { ...block, last_refit: { ...rest, resumed: 1 } };
+    const html = render(resumed);
+    expect(html).toContain("(resumed run)");
+    expect(html).not.toContain('data-testid="se-refit-gate"');
+  });
+});

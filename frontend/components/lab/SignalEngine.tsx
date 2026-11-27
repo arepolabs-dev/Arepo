@@ -489,6 +489,22 @@ export function SignalEngine({ block, nowMs }: { block: unknown; nowMs: number }
             {typeof se.last_refit?.models === "number" ? (
               <span className="block text-[12px] text-arepo-muted">{fmtCount(se.last_refit.models)} models</span>
             ) : null}
+            {typeof se.last_refit?.seconds === "number" ? (
+              <span className="block text-[12px] text-arepo-muted" data-testid="se-refit-cost">
+                {fmtCount(Math.round(se.last_refit.seconds))} s wall
+                {typeof se.last_refit.peak_vm_mb === "number"
+                  ? `, peak ${fmtCount(Math.round(se.last_refit.peak_vm_mb))} MB${se.last_refit.gate?.peak_vm_mb ? ` of ${fmtCount(se.last_refit.gate.peak_vm_mb)}` : ""}`
+                  : ""}
+                {se.last_refit.resumed ? " (resumed run)" : ""}
+              </span>
+            ) : null}
+            {typeof se.last_refit?.gate_load_s === "number" ? (
+              <span className="block text-[12px] text-arepo-muted" data-testid="se-refit-gate">
+                New-challenger gate: {fmtCount(Math.round(se.last_refit.gate_load_s))} s
+                {se.last_refit.gate?.wall_s ? ` of ${fmtCount(se.last_refit.gate.wall_s)} s` : ""} (refit + 1.5 x champion fit),{" "}
+                {se.last_refit.gate_pass ? "passes" : "fails"}
+              </span>
+            ) : null}
           </Fact>
           <Fact label="Last prediction">
             {fmtUtc(se.last_prediction?.at)}
