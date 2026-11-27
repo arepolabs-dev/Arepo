@@ -347,7 +347,26 @@ export interface SignalEngineBlock {
   champion?: { model_id?: string; spec_sha256?: string; family?: string };
   models?: SeModel[];
   note?: string;
-  last_refit?: { at?: string; models?: number; targets_ok?: number };
+  last_refit?: {
+    at?: string;
+    models?: number;
+    targets_ok?: number;
+    seconds?: number;
+    peak_vm_mb?: number;
+    resumed?: number;
+    gate?: {
+      wall_s?: number;
+      peak_vm_mb?: number;
+      withdraw_wall_s?: number;
+      withdraw_peak_vm_mb?: number;
+      champion_factor?: number;
+    };
+    /** DESIGN_V1 §72 (d) (iii): wall + 1.5 x the champion's fit seconds; absent for a resumed run. */
+    champion?: string;
+    champion_fit_s?: number;
+    gate_load_s?: number;
+    gate_pass?: boolean;
+  };
   last_prediction?: { capture_id?: string; at?: string; models?: number };
   /** Input-coverage monitor (`se-input-health-v1`, DESIGN_V1 section 31): inputs only, no scores. */
   inputs?: SeInputs | null;
